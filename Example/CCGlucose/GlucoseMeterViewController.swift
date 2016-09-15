@@ -76,7 +76,6 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         glucoseFeatures = features
         
         self.refreshTable()
-        
         glucose.downloadAllRecords()
     }
     
@@ -161,8 +160,11 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
                 }
             case 2:
                 let measurement = Array(glucoseMeasurements)[indexPath.row]
+                let mmolString : String = (measurement.toMMOL()?.description)!
                 
-                cell.textLabel!.text = "(" + measurement.sequenceNumber!.description + ") " + (measurement.glucoseConcentration?.description)! + " " + measurement.glucoseConcentrationUnits!
+                cell.textLabel!.text = "(" + measurement.sequenceNumber!.description + ") " + (measurement.glucoseConcentration?.description)! + " " + measurement.glucoseConcentrationUnits! +
+                    " (" + mmolString + " mmol/L)"
+                
                 cell.detailTextLabel!.text = measurement.dateTime?.description
             default:
                 cell.textLabel!.text = ""

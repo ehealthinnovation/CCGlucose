@@ -252,4 +252,8 @@ public class GlucoseMeasurement {
         generalDeviceFault = sensorStatusAnnunciationBytes.bit(10).toBool()
         timeFaultHasOccurred = sensorStatusAnnunciationBytes.bit(11).toBool()
     }
+    
+    public func toMMOL() -> Float? {
+        return ((self.glucoseConcentration! * 100000) / 18);
+    }
 }

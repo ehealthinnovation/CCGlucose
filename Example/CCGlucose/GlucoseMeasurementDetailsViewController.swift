@@ -28,7 +28,6 @@ class GlucoseMeasurementDetailsViewController: UITableViewController {
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
-
     
     // MARK: Table data source methods
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {

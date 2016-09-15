@@ -35,6 +35,11 @@ public class Glucose : NSObject {
     var peripheralName : String!
     var servicesAndCharacteristics : [String: [CBCharacteristic]] = [:]
     
+    var manufacturerName : String!
+    var modelNumber : String!
+    var serialNumber : String!
+    var firmwareVersion : String!
+    
     public override init() {
         super.init()
         print("Glucoser#init")
@@ -259,6 +264,27 @@ extension Glucose: BluetoothServiceProtocol {
     public func didDiscoverServiceWithCharacteristics(_ service:CBService) {
         print("Glucose#didDiscoverServiceWithCharacteristics")
         servicesAndCharacteristics[service.uuid.uuidString] = service.characteristics
+        
+        if (service.uuid.uuidString == "180A") {
+            for characteristic in service.characteristics! {
+                switch characteristic.uuid.uuidString {
+                    case "2A29": //manufacturer name
+                        self.manufacturerName = String(data: characteristic.value!, encoding: .utf8)
+                        print("manufacturerName: \(self.manufacturerName)")
+                    case "2A24": //model name
+                        self.modelNumber = String(data: characteristic.value!, encoding: .utf8)
+                        print("modelNumber: \(self.modelNumber)")
+                    case "2A25": //serial number
+                        self.serialNumber = String(data: characteristic.value!, encoding: .utf8)
+                        print("serialNumber: \(self.serialNumber)")
+                    case "2A26": //firmware version
+                        self.firmwareVersion = String(data: characteristic.value!, encoding: .utf8)
+                        print("firmwareVersion: \(self.firmwareVersion)")
+                    default:
+                        print("")
+                }
+            }
+        }
     }
 }
 

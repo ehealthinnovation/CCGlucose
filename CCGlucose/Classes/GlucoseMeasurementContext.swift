@@ -74,7 +74,7 @@ enum MedicationValueUnits : String {
 }
 
 
-public class GlucoseMeasurementContext {
+public class GlucoseMeasurementContext : NSObject {
     //raw data
     var data: NSData
     var indexCounter: Int = 0
@@ -104,6 +104,7 @@ public class GlucoseMeasurementContext {
     
     init(data: NSData?) {
         self.data = data!
+        super.init()
         print("GlucoseMeasurementContext#init - \(self.data)")
         parseFlags()
         parseSequenceNumber()

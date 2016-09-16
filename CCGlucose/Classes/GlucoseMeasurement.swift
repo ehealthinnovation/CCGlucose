@@ -8,44 +8,75 @@
 
 import Foundation
 
-enum SampleType : String {
-    case reserved = "Reserved",
-    capillaryWholeBlood = "Capillary whole blood",
-    capillaryPlasma = "Capillary plasma",
-    venousWholeBlood = "Venous whole blood",
-    venousPlasma = "Venous plasma",
-    arterialWholeBlood = "Arterial whole blood",
-    arterialPlasma = "Arterial plasma",
-    undeterminedWholeBlood = "Undetermined whole blood",
-    undeterminedPlasma = "Undetermined plasma",
-    interstitialFluid  = "Interstitial fluid",
-    controlSolution = "Control solution"
+// note: enums that are exported to objc cannot be nicely printed, so we have to add a description
+
+@objc enum SampleType : Int {
+    case reserved = 0,
+    capillaryWholeBlood,
+    capillaryPlasma,
+    venousWholeBlood,
+    venousPlasma,
+    arterialWholeBlood,
+    arterialPlasma,
+    undeterminedWholeBlood,
+    undeterminedPlasma,
+    interstitialFluid,
+    controlSolution
     
-    static let allValues = [reserved, capillaryWholeBlood, capillaryPlasma, venousWholeBlood, venousPlasma, arterialWholeBlood, arterialPlasma, undeterminedWholeBlood, undeterminedPlasma, interstitialFluid, controlSolution]
+    var description : String {
+        switch self {
+        case .reserved: return "Reserved"
+        case .capillaryWholeBlood: return "Capillary Whole Blood"
+        case .capillaryPlasma: return "Capillary Plasma"
+        case .venousWholeBlood: return "Venous Whole Blood"
+        case .venousPlasma: return "Venous Plasma"
+        case .arterialWholeBlood: return "Arterial Whole Blood"
+        case .arterialPlasma: return "Arterial Plasma"
+        case .undeterminedWholeBlood: return "Undetermined Whole Blood"
+        case .undeterminedPlasma: return "Undetermined Plasma"
+        case .interstitialFluid: return "Intersitial Fluid"
+        case .controlSolution: return "Control Solution"
+        }
+    }
 }
 
-enum SampleLocation : String {
-    case reserved = "Reserved",
-    finger = "finger",
-    alternateSiteTest = "Alternate site test",
-    earlobe = "Earlobe",
-    controlSolution = "Control solution",
-    SampleLocationNotAvailable = "Sample location not available"
+@objc enum SampleLocation : Int {
+    case reserved = 0, //= "Reserved",
+    finger, // = "finger",
+    alternateSiteTest, // = "Alternate site test",
+    earlobe, // = "Earlobe",
+    controlSolution, // = "Control solution",
+    SampleLocationNotAvailable // = "Sample location not available"
+
+    var description : String {
+        switch self {
+        case .reserved: return "Reserved"
+        case .finger: return "Finger"
+        case .alternateSiteTest: return "Alternate Site Test"
+        case .earlobe: return "Earlobe"
+        case .controlSolution: return "Control Solution"
+        case .SampleLocationNotAvailable: return "Not Available"
+        }
+    }
     
-    static let allValues = [reserved, finger, alternateSiteTest, earlobe, controlSolution, SampleLocationNotAvailable]
 }
 
-enum GlucoseConcentrationUnits : String {
-    case kgL = "kg/L",
-    molL = "mol/L"
+enum GlucoseConcentrationUnits : Int, CustomStringConvertible {
+    case kgL = 0,
+    molL
     
-    static let allValues = [kgL, molL]
+    var description : String {
+        switch self {
+        case .kgL: return NSLocalizedString("kg/L", comment: "concentration unit")
+        case .molL: return NSLocalizedString("mol/L", comment: "concentration unit")
+        }
+    }
+
 }
 
-
-public class GlucoseMeasurement {
+public class GlucoseMeasurement : NSObject {
     //raw data
-    var data: NSData
+    let data: NSData
     var indexCounter: Int = 0
     
     //publicly accessible properties
@@ -80,6 +111,8 @@ public class GlucoseMeasurement {
     
     init(data: NSData?) {
         self.data = data!
+        super.init()
+
         print("GlucoseMeasurement#init - \(self.data)")
         parseFlags()
         parseSequenceNumber()
@@ -107,7 +140,11 @@ public class GlucoseMeasurement {
         
         timeOffsetPresent = flagsByte.bit(0).toBool()
         glucoseConcentrationTypeAndSampleLocationPresent = flagsByte.bit(1).toBool()
-        glucoseConcentrationUnits = GlucoseConcentrationUnits.allValues[flagsByte.bit(2)].rawValue
+
+        if let unit = GlucoseConcentrationUnits(rawValue: flagsByte.bit(2)) {
+            glucoseConcentrationUnits = unit.description
+        }
+        
         sensorStatusAnnunciationPresent = flagsByte.bit(3).toBool()
         contextInformationFollows = flagsByte.bit(4).toBool()
         
@@ -216,17 +253,17 @@ public class GlucoseMeasurement {
         let sampleLocationAndDataTypeData = data.dataRange(indexCounter, Length: 1)
         print("sampleLocationAndDataTypeData: \(sampleLocationAndDataTypeData)")
         let type = sampleLocationAndDataTypeData.lowNibbleAtPosition()
-        let sample = sampleLocationAndDataTypeData.highNibbleAtPosition()
+        let location = sampleLocationAndDataTypeData.highNibbleAtPosition()
         
-        print("type: \(SampleType.allValues[type].rawValue)")
-        self.sampleType = SampleType.allValues[type].rawValue
+        self.sampleType = SampleType(rawValue: type)?.description
+        print("type: \(self.sampleType)")
         
-        if(sample > 4) {
+        if(location > 4) {
             print("sample location is reserved for future use")
             self.sampleLocation = "Reserved"
         } else {
-            print("sample location: \(SampleLocation.allValues[sample].rawValue)")
-            self.sampleLocation = SampleLocation.allValues[sample].rawValue
+            self.sampleLocation = SampleLocation(rawValue: location)?.description
+            print("sample location: \(self.sampleLocation)")
         }
         
         indexCounter += 1

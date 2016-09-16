@@ -31,14 +31,7 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         glucose = Glucose(cbPeripheral: selectedMeter)
         glucose.glucoseDelegate = self
     }
-    
-    override func viewWillAppear(_ animated: Bool) {
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
-    
+        
     override func didMove(toParentViewController parent: UIViewController?) {
         super.didMove(toParentViewController: parent)
         
@@ -46,6 +39,8 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
            glucose.disconnectGlucoseMeter()
         }
     }
+    
+    // MARK: - GlucoseProtocol
     
     func glucoseMeterConnected(meter: CBPeripheral) {
         print("GlucoseMeterViewController#glucoseMeterConnected")
@@ -79,6 +74,7 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         glucose.downloadAllRecords()
     }
     
+    // MARK: - Storyboard
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         let detailsViewController =  segue.destination as! GlucoseMeasurementDetailsViewController
         detailsViewController.glucoseMeasurement = selectedGlucoseMeasurement
@@ -86,7 +82,7 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         detailsViewController.glucoseMeasurementContext = selectedGlucoseMeasurementContext
     }
     
-    // MARK: Table data source methods
+    // MARK: - UITableViewDataSource
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
             case 0:
@@ -195,7 +191,7 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         }
     }
 
-    //MARK: table delegate methods
+    //MARK: - table delegate methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         print("didSelectRowAtIndexPath")
         
@@ -206,6 +202,8 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
             performSegue(withIdentifier: "segueToMeasurementDetails", sender: self)
         }
     }
+    
+    // MARK: -
     
     func refreshTable() {
         DispatchQueue.main.async(execute: {

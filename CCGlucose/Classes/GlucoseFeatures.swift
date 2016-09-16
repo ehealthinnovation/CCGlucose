@@ -9,7 +9,7 @@
 import Foundation
 import CCToolbox
 
-public class GlucoseFeatures {
+public class GlucoseFeatures : NSObject {
     var features: Int = 0
     
     public var lowBatterySupported: Bool?

@@ -13,7 +13,7 @@ import CCToolbox
 
 var thisGlucose : Glucose?
 
-public protocol GlucoseProtocol {
+@objc public protocol GlucoseProtocol {
     func numberOfStoredRecords(number: UInt16)
     func glucoseMeasurement(measurement:GlucoseMeasurement)
     func glucoseMeasurementContext(measurementContext:GlucoseMeasurementContext)

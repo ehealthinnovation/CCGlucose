@@ -50,8 +50,9 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
     func numberOfStoredRecords(number: UInt16) {
         print("GlucoseMeterViewController#numberOfStoredRecords - \(number)")
         glucoseMeasurementCount = number
-        glucose.readGlucoseFeatures()
         self.refreshTable()
+        
+        glucose.downloadAllRecords()
     }
     
     func glucoseMeasurement(measurement:GlucoseMeasurement) {
@@ -71,7 +72,6 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         glucoseFeatures = features
         
         self.refreshTable()
-        glucose.downloadAllRecords()
     }
     
     // MARK: - Storyboard
@@ -204,7 +204,6 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
     }
     
     // MARK: -
-    
     func refreshTable() {
         DispatchQueue.main.async(execute: {
             self.tableView.reloadData()

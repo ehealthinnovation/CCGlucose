@@ -78,6 +78,9 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" id="obz-06-mTW"/>
+                    <refreshControl key="refreshControl" opaque="NO" multipleTouchEnabled="YES" contentMode="center" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" id="oJP-5h-IcH">
+                        <autoresizingMask key="autoresizingMask"/>
+                    </refreshControl>
                     <connections>
                         <segue destination="XRM-Qa-hz1" kind="show" identifier="segueToGlucoseMeter" id="hMT-fN-VSt"/>
                     </connections>

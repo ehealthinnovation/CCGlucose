@@ -32,8 +32,12 @@ public class Glucose : NSObject {
     public var serviceUUIDString:String = "1808"
     public var autoEnableNotifications:Bool = true
     public var allowDuplicates:Bool = false
+    public var batteryProfileSupported:Bool = false
+    public var glucoseFeatures:GlucoseFeatures!
+    
     var peripheralName : String!
     var servicesAndCharacteristics : [String: [CBCharacteristic]] = [:]
+    var allowedToScanForPeripherals:Bool = false
     
     var manufacturerName : String!
     var modelNumber : String!
@@ -42,13 +46,13 @@ public class Glucose : NSObject {
     
     public override init() {
         super.init()
-        print("Glucoser#init")
+        print("Glucose#init")
         self.configureBluetoothParameters()
     }
     
     public init(cbPeripheral:CBPeripheral!) {
         super.init()
-        print("Glucoser#init[cbPeripheral]")
+        print("Glucose#init[cbPeripheral]")
         self.peripheral = cbPeripheral
         self.configureBluetoothParameters()
         self.connectToGlucoseMeter(glucoseMeter: self.peripheral)
@@ -81,8 +85,8 @@ public class Glucose : NSObject {
     }
     
     func parseFeaturesResponse(data: NSData) {
-        let glucoseFeatures = GlucoseFeatures(data: data)
-        glucoseDelegate.glucoseFeatures(features: glucoseFeatures)
+        self.glucoseFeatures = GlucoseFeatures(data: data)
+        glucoseDelegate.glucoseFeatures(features: self.glucoseFeatures)
     }
     
     func parseRACPReponse(data:NSData) {
@@ -215,7 +219,17 @@ public class Glucose : NSObject {
 }
 
 extension Glucose: BluetoothProtocol {
+    public func scanForGlucoseMeters() {
+        Bluetooth.sharedInstance().startScanning(self.allowDuplicates)
+        
+        if(self.allowedToScanForPeripherals) {
+            Bluetooth.sharedInstance().startScanning(self.allowDuplicates)
+        }
+    }
+    
     public func bluetoothIsAvailable() {
+        self.allowedToScanForPeripherals = true
+        
         if(self.peripheral != nil) {
             Bluetooth.sharedInstance().connectPeripheral(self.peripheral)
         } else {
@@ -257,13 +271,18 @@ extension Glucose: BluetoothPeripheralProtocol {
 }
 
 extension Glucose: BluetoothServiceProtocol {
-    public func didDiscoverService(_ service:CBService) {
-        print("Glucose#didDiscoverService")
+    public func didDiscoverServices(_ services: [CBService]) {
+        print("Glucose#didDiscoverServices - \(services)")
     }
-     
+
     public func didDiscoverServiceWithCharacteristics(_ service:CBService) {
         print("Glucose#didDiscoverServiceWithCharacteristics")
+
         servicesAndCharacteristics[service.uuid.uuidString] = service.characteristics
+        
+        if (service.uuid.uuidString == "180F") {
+            batteryProfileSupported = true
+        }
         
         if (service.uuid.uuidString == "180A") {
             for characteristic in service.characteristics! {
@@ -308,6 +327,7 @@ extension Glucose: BluetoothCharacteristicProtocol {
     public func didUpdateNotificationStateFor(_ characteristic:CBCharacteristic) {
         print("Glucose#didUpdateNotificationStateFor")
         if(characteristic.uuid.uuidString == recordAccessControlPointCharacteristic) {
+            readGlucoseFeatures()
             readNumberOfRecords()
         }
     }

@@ -18,27 +18,28 @@ class GlucoseMetersViewController: UITableViewController, GlucoseMeterDiscoveryP
     var glucoseMeters: Array<CBPeripheral> = Array<CBPeripheral>()
     var peripheral : CBPeripheral!
     let rc = UIRefreshControl()
-    var isScanning: Bool!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         print("GlucoseMetersViewController#viewDidLoad")
         
-        //tableView.refreshControl = rc
-        //rc.attributedTitle = NSAttributedString(string: "Pull to scan")
-        //rc.addTarget(self, action: #selector(refresh(sender:)), for: UIControlEvents.valueChanged)
-        isScanning = false
+        refreshControl = UIRefreshControl()
+        refreshControl?.attributedTitle = NSAttributedString(string: "Pull to refresh")
+        refreshControl?.addTarget(self, action: #selector(onRefresh), for: .valueChanged)
+        
         glucose = Glucose()
         glucose.glucoseMeterDiscoveryDelegate = self
     }
     
-    func refresh(sender:AnyObject) {
-        if(isScanning == false) {
-            glucose = Glucose()
-            glucose.glucoseMeterDiscoveryDelegate = self
-        }
-        rc.endRefreshing()
-        isScanning = true
+    func onRefresh() {
+        refreshControl?.endRefreshing()
+        glucoseMeters.removeAll()
+
+        self.refreshTable()
+        
+        glucose = Glucose()
+        glucose.glucoseMeterDiscoveryDelegate = self
+        glucose.scanForGlucoseMeters()
     }
     
     override func viewWillAppear(_ animated: Bool) {

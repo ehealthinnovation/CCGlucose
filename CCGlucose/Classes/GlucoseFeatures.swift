@@ -27,8 +27,8 @@ public class GlucoseFeatures : NSObject {
     init(data: NSData?) {
         print("GlucoseFeatures#init - \(data)")
         let swappedFeatureData = data?.swapUInt16Data()
-        var featureString = swappedFeatureData?.toHexString()
-        var featureBytes = Int(strtoul(featureString, nil, 16))
+        let featureString = swappedFeatureData?.toHexString()
+        let featureBytes = Int(strtoul(featureString, nil, 16))
         print("featureBytes: \(featureBytes)")
         
         lowBatterySupported = featureBytes.bit(0).toBool()

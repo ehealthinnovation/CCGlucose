@@ -94,8 +94,8 @@ public class Glucose : NSObject {
     
     func parseRACPReponse(data:NSData) {
         print("parsing RACP response: \(data)")
-        var hexString = data.toHexString()
-        var hexStringHeader = hexString.subStringWithRange(0, to: 2)
+        let hexString = data.toHexString()
+        let hexStringHeader = hexString.subStringWithRange(0, to: 2)
         print("hexStringHeader: \(hexStringHeader)")
         
         if(hexStringHeader == numberOfStoredRecordsResponse) {
@@ -137,7 +137,7 @@ public class Glucose : NSObject {
         let commandPrefix = "010401"
         var recordNumberInt = recordNumber
         let recordNumberData = NSData(bytes: &recordNumberInt, length: MemoryLayout<UInt16>.size)
-        var recordNumberHex = String(recordNumberData.toHexString())
+        let recordNumberHex = String(recordNumberData.toHexString())
         
         let command = commandPrefix +
             (recordNumberHex?.subStringWithRange(0, to: 2))! +
@@ -154,11 +154,11 @@ public class Glucose : NSObject {
         let commandPrefix = "010401"
         var recordNumberFromInt = from
         let recordNumberFromData = NSData(bytes: &recordNumberFromInt, length: MemoryLayout<UInt16>.size)
-        var recordNumberFromHex = String(recordNumberFromData.toHexString())
+        let recordNumberFromHex = String(recordNumberFromData.toHexString())
         
         var recordNumberToInt = to
         let recordNumberToData = NSData(bytes: &recordNumberToInt, length: MemoryLayout<UInt16>.size)
-        var recordNumberToHex = String(recordNumberToData.toHexString())
+        let recordNumberToHex = String(recordNumberToData.toHexString())
         
         let command = commandPrefix +
             (recordNumberFromHex?.subStringWithRange(0, to: 2))! +
@@ -175,7 +175,7 @@ public class Glucose : NSObject {
         let commandPrefix = "010301"
         var recordNumberInt = recordNumber
         let recordNumberData = NSData(bytes: &recordNumberInt, length: MemoryLayout<UInt16>.size)
-        var recordNumberHex = String(recordNumberData.toHexString())
+        let recordNumberHex = String(recordNumberData.toHexString())
         
         let command = commandPrefix +
             (recordNumberHex?.subStringWithRange(0, to: 2))! +
@@ -288,7 +288,7 @@ extension Glucose: BluetoothServiceProtocol {
         
         if (service.uuid.uuidString == "180A") {
             for characteristic in service.characteristics! {
-                if let value = characteristic.value {
+                if (characteristic.value != nil) {
                     switch characteristic.uuid.uuidString {
                     case "2A29":  //manufacturer name
                         self.manufacturerName = String(data: characteristic.value!, encoding: .utf8)

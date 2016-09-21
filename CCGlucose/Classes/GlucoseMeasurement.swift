@@ -143,8 +143,8 @@ public class GlucoseMeasurement : NSObject {
     class func extractFlags(data: NSData) -> Int {
         let index = 0
         let flagsData = data.dataRange(index, Length: 1)
-        var flagsString = flagsData.toHexString()
-        var flagsByte = Int(strtoul(flagsString, nil, 16))
+        let flagsString = flagsData.toHexString()
+        let flagsByte = Int(strtoul(flagsString, nil, 16))
         print("flags byte: \(flagsByte)")
         return flagsByte
     }
@@ -262,8 +262,6 @@ public class GlucoseMeasurement : NSObject {
         
         print("dateComponents: \(dateComponents)")
         
-        let date = calendar.date(from: dateComponents as DateComponents)
-        
         let measurementDate = calendar.date(from: dateComponents as DateComponents)
         print("measurementDate: \(measurementDate)")
         self.dateTime = measurementDate
@@ -324,8 +322,8 @@ public class GlucoseMeasurement : NSObject {
     func parseSensorStatusAnnunciation() {
         print("parseSensorStatusAnnunciation [indexCounter:\(indexCounter)]")
         let sensorStatusAnnunciationData = data.dataRange(indexCounter, Length: 2)
-        var sensorStatusAnnunciationString = sensorStatusAnnunciationData.toHexString()
-        var sensorStatusAnnunciationBytes = Int(strtoul(sensorStatusAnnunciationString, nil, 16))
+        let sensorStatusAnnunciationString = sensorStatusAnnunciationData.toHexString()
+        let sensorStatusAnnunciationBytes = Int(strtoul(sensorStatusAnnunciationString, nil, 16))
         print("sensorStatusAnnunciation bytes: \(sensorStatusAnnunciationBytes)")
         
         deviceBatteryLowAtTimeOfMeasurement = sensorStatusAnnunciationBytes.bit(0).toBool()!

@@ -78,7 +78,7 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         let detailsViewController =  segue.destination as! GlucoseMeasurementDetailsViewController
         detailsViewController.glucoseMeasurement = selectedGlucoseMeasurement
-        selectedGlucoseMeasurementContext = getContextFromArray(sequenceNumber: selectedGlucoseMeasurement.sequenceNumber!)
+        selectedGlucoseMeasurementContext = getContextFromArray(sequenceNumber: selectedGlucoseMeasurement.sequenceNumber)
         detailsViewController.glucoseMeasurementContext = selectedGlucoseMeasurementContext
     }
     
@@ -158,8 +158,7 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
                 let measurement = Array(glucoseMeasurements)[indexPath.row]
                 let mmolString : String = (measurement.toMMOL()?.description)!
                 
-                cell.textLabel!.text = "(" + measurement.sequenceNumber!.description + ") " + (measurement.glucoseConcentration?.description)! + " " + measurement.glucoseConcentrationUnits! +
-                    " (" + mmolString + " mmol/L)"
+                cell.textLabel!.text = "(\(measurement.sequenceNumber)) \(measurement.glucoseConcentration) \(measurement.unit.description) (\(mmolString) mmol/L)"
                 
                 cell.detailTextLabel!.text = measurement.dateTime?.description
             default:

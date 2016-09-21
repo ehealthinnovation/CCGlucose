@@ -49,25 +49,25 @@ class GlucoseMeasurementDetailsViewController: UITableViewController {
         if(indexPath.section == 0) {
             switch indexPath.row {
             case 0:
-                cell.textLabel!.text = glucoseMeasurement.sequenceNumber?.description
+                cell.textLabel!.text = glucoseMeasurement.sequenceNumber.description
                 cell.detailTextLabel!.text = "Sequence number"
             case 1:
                 cell.textLabel!.text = glucoseMeasurement.dateTime?.description
                 cell.detailTextLabel!.text = "Date/time"
             case 2:
-                cell.textLabel!.text = glucoseMeasurement.timeOffset?.description
+                cell.textLabel!.text = glucoseMeasurement.timeOffset.description
                 cell.detailTextLabel!.text = "Time offset"
             case 3:
-                cell.textLabel!.text = glucoseMeasurement.glucoseConcentration?.description
+                cell.textLabel!.text = glucoseMeasurement.glucoseConcentration.description
                 cell.detailTextLabel!.text = "Glucose concentration"
             case 4:
-                cell.textLabel!.text = glucoseMeasurement.glucoseConcentrationUnits
+                cell.textLabel!.text = glucoseMeasurement.unit.description
                 cell.detailTextLabel!.text = "Glucose concentration units"
             case 5:
-                cell.textLabel!.text = glucoseMeasurement.sampleType
+                cell.textLabel!.text = glucoseMeasurement.sampleType?.description
                 cell.detailTextLabel!.text = "Sample type"
             case 6:
-                cell.textLabel!.text = glucoseMeasurement.sampleLocation
+                cell.textLabel!.text = glucoseMeasurement.sampleLocation?.description
                 cell.detailTextLabel!.text = "Sample location"
             default :
                 cell.textLabel!.text = ""
@@ -77,40 +77,40 @@ class GlucoseMeasurementDetailsViewController: UITableViewController {
         if(indexPath.section == 1) {
             switch indexPath.row {
             case 0:
-                cell.textLabel!.text = glucoseMeasurement.deviceBatteryLowAtTimeOfMeasurement?.description
+                cell.textLabel!.text = glucoseMeasurement.deviceBatteryLowAtTimeOfMeasurement.description
                 cell.detailTextLabel!.text = "Device Battery Low At Time Of Measurement"
             case 1:
-                cell.textLabel!.text = glucoseMeasurement.sensorMalfunctionOrFaultingAtTimeOfMeasurement?.description
+                cell.textLabel!.text = glucoseMeasurement.sensorMalfunctionOrFaultingAtTimeOfMeasurement.description
                 cell.detailTextLabel!.text = "Sensor Malfunction Or Faulting At Time Of Measurement"
             case 2:
-                cell.textLabel!.text = glucoseMeasurement.sampleSizeForBloodOrControlSolutionInsufficientAtTimeOfMeasurement?.description
+                cell.textLabel!.text = glucoseMeasurement.sampleSizeForBloodOrControlSolutionInsufficientAtTimeOfMeasurement.description
                 cell.detailTextLabel!.text = "Sample Size For Blood Or Control Solution Insufficient At Time Of Measurement"
             case 3:
-                cell.textLabel!.text = glucoseMeasurement.stripInsertionError?.description
+                cell.textLabel!.text = glucoseMeasurement.stripInsertionError.description
                 cell.detailTextLabel!.text = "Strip Insertion Error"
             case 4:
-                cell.textLabel!.text = glucoseMeasurement.stripTypeIncorrectForDevice?.description
+                cell.textLabel!.text = glucoseMeasurement.stripTypeIncorrectForDevice.description
                 cell.detailTextLabel!.text = "Strip Type Incorrect For Device"
             case 5:
-                cell.textLabel!.text = glucoseMeasurement.sensorResultHigherThanTheDeviceCanProcess?.description
+                cell.textLabel!.text = glucoseMeasurement.sensorResultHigherThanTheDeviceCanProcess.description
                 cell.detailTextLabel!.text = "Sensor Result Higher Than The Device Can Process"
             case 6:
-                cell.textLabel!.text = glucoseMeasurement.sensorResultLowerThanTheDeviceCanProcess?.description
+                cell.textLabel!.text = glucoseMeasurement.sensorResultLowerThanTheDeviceCanProcess.description
                 cell.detailTextLabel!.text = "Sensor Result Lower Than The Device Can Process"
             case 7:
-                cell.textLabel!.text = glucoseMeasurement.sensorTemperatureTooHighForValidTest?.description
+                cell.textLabel!.text = glucoseMeasurement.sensorTemperatureTooHighForValidTest.description
                 cell.detailTextLabel!.text = "Sensor Temperature Too High For Valid Test"
             case 8:
-                cell.textLabel!.text = glucoseMeasurement.sensorTemperatureTooLowForValidTest?.description
+                cell.textLabel!.text = glucoseMeasurement.sensorTemperatureTooLowForValidTest.description
                 cell.detailTextLabel!.text = "Sensor Temperature Too Low For Valid Test"
             case 9:
-                cell.textLabel!.text = glucoseMeasurement.sensorReadInterruptedBecauseStripWasPulledTooSoon?.description
+                cell.textLabel!.text = glucoseMeasurement.sensorReadInterruptedBecauseStripWasPulledTooSoon.description
                 cell.detailTextLabel!.text = "Sensor Read Interrupted Because Strip Was Pulled Too Soon"
             case 10:
-                cell.textLabel!.text = glucoseMeasurement.generalDeviceFault?.description
+                cell.textLabel!.text = glucoseMeasurement.generalDeviceFault.description
                 cell.detailTextLabel!.text = "General Device Fault"
             case 11:
-                cell.textLabel!.text = glucoseMeasurement.timeFaultHasOccurred?.description
+                cell.textLabel!.text = glucoseMeasurement.timeFaultHasOccurred.description
                 cell.detailTextLabel!.text = "Time Fault Has Occurred"
             default :
                 cell.textLabel!.text = ""

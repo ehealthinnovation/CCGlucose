@@ -11,8 +11,6 @@ import CoreBluetooth
 import CCBluetooth
 import CCToolbox
 
-var thisGlucose : Glucose?
-
 @objc public protocol GlucoseProtocol {
     func numberOfStoredRecords(number: UInt16)
     func glucoseMeasurement(measurement:GlucoseMeasurement)
@@ -21,14 +19,14 @@ var thisGlucose : Glucose?
     func glucoseMeterConnected(meter: CBPeripheral)
 }
 
-public protocol GlucoseMeterDiscoveryProtocol {
+@objc public protocol GlucoseMeterDiscoveryProtocol {
     func glucoseMeterDiscovered(glucoseMeter:CBPeripheral)
 }
 
 public class Glucose : NSObject {
     public var glucoseDelegate : GlucoseProtocol!
     public var glucoseMeterDiscoveryDelegate: GlucoseMeterDiscoveryProtocol!
-    public var peripheral : CBPeripheral!
+    var peripheral : CBPeripheral!
     public var serviceUUIDString:String = "1808"
     public var autoEnableNotifications:Bool = true
     public var allowDuplicates:Bool = false
@@ -39,10 +37,14 @@ public class Glucose : NSObject {
     var servicesAndCharacteristics : [String: [CBCharacteristic]] = [:]
     var allowedToScanForPeripherals:Bool = false
     
-    var manufacturerName : String!
-    var modelNumber : String!
-    var serialNumber : String!
-    var firmwareVersion : String!
+    public internal(set) var manufacturerName : String?
+    public internal(set) var modelNumber : String?
+    public internal(set) var serialNumber : String?
+    public internal(set) var firmwareVersion : String?
+    
+    public var uuid : String {
+        return self.peripheral.identifier.uuidString
+    }
     
     public override init() {
         super.init()
@@ -55,7 +57,7 @@ public class Glucose : NSObject {
         print("Glucose#init[cbPeripheral]")
         self.peripheral = cbPeripheral
         self.configureBluetoothParameters()
-        self.connectToGlucoseMeter(glucoseMeter: self.peripheral)
+        self.connectToGlucoseMeter(glucoseMeter: cbPeripheral)
     }
     
     public init(peripheralName:String) {
@@ -76,6 +78,7 @@ public class Glucose : NSObject {
     }
 
     public func connectToGlucoseMeter(glucoseMeter: CBPeripheral) {
+        self.peripheral = glucoseMeter
         Bluetooth.sharedInstance().stopScanning()
         Bluetooth.sharedInstance().connectPeripheral(glucoseMeter)
     }
@@ -263,7 +266,6 @@ extension Glucose: BluetoothPeripheralProtocol {
     
     public func didConnectPeripheral(_ cbPeripheral:CBPeripheral) {
         print("Glucose#didConnectPeripheral")
-        self.peripheral = cbPeripheral
         glucoseDelegate.glucoseMeterConnected(meter: cbPeripheral)
         
         Bluetooth.sharedInstance().discoverAllServices(cbPeripheral)
@@ -286,8 +288,9 @@ extension Glucose: BluetoothServiceProtocol {
         
         if (service.uuid.uuidString == "180A") {
             for characteristic in service.characteristics! {
-                switch characteristic.uuid.uuidString {
-                    case "2A29": //manufacturer name
+                if let value = characteristic.value {
+                    switch characteristic.uuid.uuidString {
+                    case "2A29":  //manufacturer name
                         self.manufacturerName = String(data: characteristic.value!, encoding: .utf8)
                         print("manufacturerName: \(self.manufacturerName)")
                     case "2A24": //model name
@@ -301,6 +304,9 @@ extension Glucose: BluetoothServiceProtocol {
                         print("firmwareVersion: \(self.firmwareVersion)")
                     default:
                         print("")
+                    }
+                } else {
+                    print("Warn: no value for chracteristic: \(characteristic.uuid.uuidString)")
                 }
             }
         }

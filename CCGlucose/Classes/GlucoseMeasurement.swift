@@ -10,7 +10,7 @@ import Foundation
 
 // note: enums that are exported to objc cannot be nicely printed, so we have to add a description
 
-@objc enum SampleType : Int {
+@objc public enum SampleType : Int {
     case reserved = 0,
     capillaryWholeBlood,
     capillaryPlasma,
@@ -23,7 +23,7 @@ import Foundation
     interstitialFluid,
     controlSolution
     
-    var description : String {
+    public var description : String {
         switch self {
         case .reserved: return "Reserved"
         case .capillaryWholeBlood: return "Capillary Whole Blood"
@@ -40,32 +40,32 @@ import Foundation
     }
 }
 
-@objc enum SampleLocation : Int {
-    case reserved = 0, //= "Reserved",
-    finger, // = "finger",
-    alternateSiteTest, // = "Alternate site test",
-    earlobe, // = "Earlobe",
-    controlSolution, // = "Control solution",
-    SampleLocationNotAvailable // = "Sample location not available"
+@objc public enum SampleLocation : Int {
+    case reserved = 0,
+    finger,
+    alternateSiteTest,
+    earlobe,
+    controlSolution,
+    notAvailable
 
-    var description : String {
+    public var description : String {
         switch self {
         case .reserved: return "Reserved"
         case .finger: return "Finger"
         case .alternateSiteTest: return "Alternate Site Test"
         case .earlobe: return "Earlobe"
         case .controlSolution: return "Control Solution"
-        case .SampleLocationNotAvailable: return "Not Available"
+        case .notAvailable: return "Not Available"
         }
     }
     
 }
 
-enum GlucoseConcentrationUnits : Int, CustomStringConvertible {
+@objc public enum GlucoseConcentrationUnits : Int, CustomStringConvertible {
     case kgL = 0,
     molL
     
-    var description : String {
+    public var description : String {
         switch self {
         case .kgL: return NSLocalizedString("kg/L", comment: "concentration unit")
         case .molL: return NSLocalizedString("mol/L", comment: "concentration unit")
@@ -74,92 +74,145 @@ enum GlucoseConcentrationUnits : Int, CustomStringConvertible {
 
 }
 
+public enum GlucoseError : Error {
+    case outOfBounds
+    case invalidInput
+}
+
 public class GlucoseMeasurement : NSObject {
     //raw data
     let data: NSData
     var indexCounter: Int = 0
     
-    //publicly accessible properties
-    public var sequenceNumber: UInt16?
+    public var sequenceNumber: UInt16
     public var dateTime: Date?
-    public var timeOffset: UInt16?
-    public var glucoseConcentration: Float?
-    public var glucoseConcentrationUnits: String?
-    public var sampleType: String?
-    public var sampleLocation: String?
+    public var timeOffset: Int16
+    public var glucoseConcentration: Float
+    public var unit : GlucoseConcentrationUnits
+    public var sampleType: SampleType?
+    public var sampleLocation: SampleLocation?
+
     
     //flags
-    var timeOffsetPresent: Bool?
-    var glucoseConcentrationTypeAndSampleLocationPresent: Bool?
-    var sensorStatusAnnunciationPresent: Bool?
-    var contextInformationFollows: Bool?
+    var timeOffsetPresent: Bool
+    var glucoseConcentrationTypeAndSampleLocationPresent: Bool
+    var sensorStatusAnnunciationPresent: Bool
+    var contextInformationFollows: Bool
+    
+    // the following methods have been added to allow access optional types (e.g. Int, Float, Bool)
+    // that have no equivalent in objective-c. They can be removed once we no longer require objective-c compatibility
+    
+    @objc public var objc_sampleType: SampleType {
+        if let sampleType = self.sampleType {
+            return sampleType
+        }
+        return .undeterminedWholeBlood
+    }
+    
+    @objc public var objc_sampleLocation: SampleLocation {
+        if let sampleLocation = self.sampleLocation {
+            return sampleLocation
+        }
+        return .notAvailable
+    }
     
     //Sensor Status Annunciations
-    public var deviceBatteryLowAtTimeOfMeasurement: Bool?
-    public var sensorMalfunctionOrFaultingAtTimeOfMeasurement: Bool?
-    public var sampleSizeForBloodOrControlSolutionInsufficientAtTimeOfMeasurement: Bool?
-    public var stripInsertionError: Bool?
-    public var stripTypeIncorrectForDevice: Bool?
-    public var sensorResultHigherThanTheDeviceCanProcess: Bool?
-    public var sensorResultLowerThanTheDeviceCanProcess: Bool?
-    public var sensorTemperatureTooHighForValidTest: Bool?
-    public var sensorTemperatureTooLowForValidTest: Bool?
-    public var sensorReadInterruptedBecauseStripWasPulledTooSoon: Bool?
-    public var generalDeviceFault: Bool?
-    public var timeFaultHasOccurred: Bool?
-    
-    
-    init(data: NSData?) {
-        self.data = data!
-        super.init()
+    public var deviceBatteryLowAtTimeOfMeasurement: Bool
+    public var sensorMalfunctionOrFaultingAtTimeOfMeasurement: Bool
+    public var sampleSizeForBloodOrControlSolutionInsufficientAtTimeOfMeasurement: Bool
+    public var stripInsertionError: Bool
+    public var stripTypeIncorrectForDevice: Bool
+    public var sensorResultHigherThanTheDeviceCanProcess: Bool
+    public var sensorResultLowerThanTheDeviceCanProcess: Bool
+    public var sensorTemperatureTooHighForValidTest: Bool
+    public var sensorTemperatureTooLowForValidTest: Bool
+    public var sensorReadInterruptedBecauseStripWasPulledTooSoon: Bool
+    public var generalDeviceFault: Bool
+    public var timeFaultHasOccurred: Bool
 
-        print("GlucoseMeasurement#init - \(self.data)")
-        parseFlags()
-        parseSequenceNumber()
+    class func parseSequenceNumber(data: NSData) -> UInt16 {
+        let index = 1
+        let sequenceNumberData = data.dataRange(index, Length: 2)
+        let swappedSequenceNumberData = sequenceNumberData.swapUInt16Data()
+        let swappedSequenceNumberString = swappedSequenceNumberData.toHexString()
+        let sequenceNumber = UInt16(strtoul(swappedSequenceNumberString, nil, 16))
+        print("sequenceNumber: \(sequenceNumber)")
+        return sequenceNumber
+    }
+    
+    class func extractFlags(data: NSData) -> Int {
+        let index = 0
+        let flagsData = data.dataRange(index, Length: 1)
+        var flagsString = flagsData.toHexString()
+        var flagsByte = Int(strtoul(flagsString, nil, 16))
+        print("flags byte: \(flagsByte)")
+        return flagsByte
+    }
+    
+    class func extractBit(bit: Int, byte: Int) -> Bool {
+        if let value = byte.bit(bit).toBool() {
+            return value
+        }
+        print("Unable to parse byte: \(byte)")
+        return false
+    }
+
+    class func parseUnits(byte: Int) -> GlucoseConcentrationUnits {
+        let raw = byte.bit(2)
+        if let unit = GlucoseConcentrationUnits(rawValue: raw) {
+            return unit
+        }
+        print("Unable to parse unit: \(raw)")
+        return .kgL
+    }
+    
+    init(data: NSData) {
+        print("GlucoseMeasurement#init - \(data)")
+        self.data = data
+        self.unit = .kgL
+
+        let flags = GlucoseMeasurement.extractFlags(data: data)
+        self.timeOffsetPresent = GlucoseMeasurement.extractBit(bit: 0, byte: flags)
+        self.glucoseConcentrationTypeAndSampleLocationPresent = GlucoseMeasurement.extractBit(bit: 1, byte: flags)
+        self.unit = GlucoseMeasurement.parseUnits(byte: flags)
+        self.sensorStatusAnnunciationPresent = GlucoseMeasurement.extractBit(bit: 3, byte: flags)
+        self.contextInformationFollows = GlucoseMeasurement.extractBit(bit: 4, byte: flags)
         
-        if(timeOffsetPresent == true) {
+        self.sequenceNumber = GlucoseMeasurement.parseSequenceNumber(data: data)
+        self.timeOffset = 0
+        
+        indexCounter = 3; // skip flags (1) sequence number (2)
+        
+        self.glucoseConcentration = 0
+        
+        self.deviceBatteryLowAtTimeOfMeasurement = false
+        self.sensorMalfunctionOrFaultingAtTimeOfMeasurement = false;
+        self.sampleSizeForBloodOrControlSolutionInsufficientAtTimeOfMeasurement = false
+        self.stripInsertionError = false
+        self.stripTypeIncorrectForDevice = false
+        self.sensorResultHigherThanTheDeviceCanProcess = false
+        self.sensorResultLowerThanTheDeviceCanProcess = false
+        self.sensorTemperatureTooLowForValidTest = false
+        self.sensorTemperatureTooHighForValidTest = false
+        self.sensorReadInterruptedBecauseStripWasPulledTooSoon = false
+        self.generalDeviceFault = false
+        self.timeFaultHasOccurred = false
+        
+        super.init()
+        
+        if (timeOffsetPresent) {
             parseDateTime()
             parseTimeOffset()
             applyTimeOffset()
         }
-        if(glucoseConcentrationTypeAndSampleLocationPresent == true) {
+        
+        if (glucoseConcentrationTypeAndSampleLocationPresent) {
             parseGlucoseConcentration()
             parseSampleLocationAndType()
         }
-        if(sensorStatusAnnunciationPresent == true) {
+        if (sensorStatusAnnunciationPresent) {
             parseSensorStatusAnnunciation()
         }
-    }
-    
-    func parseFlags() {
-        print("parseFlags [indexCounter:\(indexCounter)]")
-        let flagsData = data.dataRange(indexCounter, Length: 1)
-        var flagsString = flagsData.toHexString()
-        var flagsByte = Int(strtoul(flagsString, nil, 16))
-        print("flags byte: \(flagsByte)")
-        
-        timeOffsetPresent = flagsByte.bit(0).toBool()
-        glucoseConcentrationTypeAndSampleLocationPresent = flagsByte.bit(1).toBool()
-
-        if let unit = GlucoseConcentrationUnits(rawValue: flagsByte.bit(2)) {
-            glucoseConcentrationUnits = unit.description
-        }
-        
-        sensorStatusAnnunciationPresent = flagsByte.bit(3).toBool()
-        contextInformationFollows = flagsByte.bit(4).toBool()
-        
-        indexCounter += 1
-    }
-    
-    func parseSequenceNumber() {
-        print("parseSequenceNumber [indexCounter:\(indexCounter)]")
-        let sequenceNumberData = data.dataRange(indexCounter, Length: 2)
-        let swappedSequenceNumberData = sequenceNumberData.swapUInt16Data()
-        let swappedSequenceNumberString = swappedSequenceNumberData.toHexString()
-        sequenceNumber = UInt16(strtoul(swappedSequenceNumberString, nil, 16))
-        print("sequenceNumber: \(sequenceNumber)")
-        
-        indexCounter += 2
     }
     
     func parseDateTime() {
@@ -219,7 +272,7 @@ public class GlucoseMeasurement : NSObject {
     func parseTimeOffset() {
         print("parseTimeOffset [indexCounter:\(indexCounter)]")
         let timeBytes = data.dataRange(indexCounter, Length: 2)
-        let timeOffset : UInt16 = timeBytes.readInteger(0);
+        let timeOffset: Int16 = timeBytes.readInteger(0);
         print("timeOffset(minutes): \(timeOffset)")
         self.timeOffset = timeOffset
         
@@ -230,8 +283,7 @@ public class GlucoseMeasurement : NSObject {
         let calendar = Calendar(identifier: Calendar.Identifier.gregorian)
         
         let offsetDateComponents = NSDateComponents()
-        offsetDateComponents.minute = Int(self.timeOffset!)
-        //let offsetDate = calendar.date(byAdding: offsetDateComponents as DateComponents, to: self.dateTime!, options: [])
+        offsetDateComponents.minute = Int(self.timeOffset)
         let offsetDate = calendar.date(byAdding: offsetDateComponents as DateComponents, to: self.dateTime!)
         print("offsetDate: \(offsetDate)")
         
@@ -255,14 +307,14 @@ public class GlucoseMeasurement : NSObject {
         let type = sampleLocationAndDataTypeData.lowNibbleAtPosition()
         let location = sampleLocationAndDataTypeData.highNibbleAtPosition()
         
-        self.sampleType = SampleType(rawValue: type)?.description
+        self.sampleType = SampleType(rawValue: type)
         print("type: \(self.sampleType)")
         
         if(location > 4) {
             print("sample location is reserved for future use")
-            self.sampleLocation = "Reserved"
+            self.sampleLocation = .reserved
         } else {
-            self.sampleLocation = SampleLocation(rawValue: location)?.description
+            self.sampleLocation = SampleLocation(rawValue: location)
             print("sample location: \(self.sampleLocation)")
         }
         
@@ -276,21 +328,21 @@ public class GlucoseMeasurement : NSObject {
         var sensorStatusAnnunciationBytes = Int(strtoul(sensorStatusAnnunciationString, nil, 16))
         print("sensorStatusAnnunciation bytes: \(sensorStatusAnnunciationBytes)")
         
-        deviceBatteryLowAtTimeOfMeasurement = sensorStatusAnnunciationBytes.bit(0).toBool()
-        sensorMalfunctionOrFaultingAtTimeOfMeasurement = sensorStatusAnnunciationBytes.bit(1).toBool()
-        sampleSizeForBloodOrControlSolutionInsufficientAtTimeOfMeasurement = sensorStatusAnnunciationBytes.bit(2).toBool()
-        stripInsertionError = sensorStatusAnnunciationBytes.bit(3).toBool()
-        stripTypeIncorrectForDevice = sensorStatusAnnunciationBytes.bit(4).toBool()
-        sensorResultHigherThanTheDeviceCanProcess = sensorStatusAnnunciationBytes.bit(5).toBool()
-        sensorResultLowerThanTheDeviceCanProcess = sensorStatusAnnunciationBytes.bit(6).toBool()
-        sensorTemperatureTooHighForValidTest = sensorStatusAnnunciationBytes.bit(7).toBool()
-        sensorTemperatureTooLowForValidTest = sensorStatusAnnunciationBytes.bit(8).toBool()
-        sensorReadInterruptedBecauseStripWasPulledTooSoon = sensorStatusAnnunciationBytes.bit(9).toBool()
-        generalDeviceFault = sensorStatusAnnunciationBytes.bit(10).toBool()
-        timeFaultHasOccurred = sensorStatusAnnunciationBytes.bit(11).toBool()
+        deviceBatteryLowAtTimeOfMeasurement = sensorStatusAnnunciationBytes.bit(0).toBool()!
+        sensorMalfunctionOrFaultingAtTimeOfMeasurement = sensorStatusAnnunciationBytes.bit(1).toBool()!
+        sampleSizeForBloodOrControlSolutionInsufficientAtTimeOfMeasurement = sensorStatusAnnunciationBytes.bit(2).toBool()!
+        stripInsertionError = sensorStatusAnnunciationBytes.bit(3).toBool()!
+        stripTypeIncorrectForDevice = sensorStatusAnnunciationBytes.bit(4).toBool()!
+        sensorResultHigherThanTheDeviceCanProcess = sensorStatusAnnunciationBytes.bit(5).toBool()!
+        sensorResultLowerThanTheDeviceCanProcess = sensorStatusAnnunciationBytes.bit(6).toBool()!
+        sensorTemperatureTooHighForValidTest = sensorStatusAnnunciationBytes.bit(7).toBool()!
+        sensorTemperatureTooLowForValidTest = sensorStatusAnnunciationBytes.bit(8).toBool()!
+        sensorReadInterruptedBecauseStripWasPulledTooSoon = sensorStatusAnnunciationBytes.bit(9).toBool()!
+        generalDeviceFault = sensorStatusAnnunciationBytes.bit(10).toBool()!
+        timeFaultHasOccurred = sensorStatusAnnunciationBytes.bit(11).toBool()!
     }
     
     public func toMMOL() -> Float? {
-        return ((self.glucoseConcentration! * 100000) / 18);
+        return ((self.glucoseConcentration * 100000) / 18);
     }
 }

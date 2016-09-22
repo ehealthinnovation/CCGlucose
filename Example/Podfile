@@ -10,5 +10,6 @@ target 'CCGlucose_Example' do
 
   target 'CCGlucose_Tests' do
     inherit! :search_paths
+    pod 'CCGlucose', :path => '../'
   end
 end

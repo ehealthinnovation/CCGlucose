@@ -166,7 +166,7 @@ public class GlucoseMeasurement : NSObject {
         return .kgL
     }
     
-    init(data: NSData) {
+    public init(data: NSData) {
         print("GlucoseMeasurement#init - \(data)")
         self.data = data
         self.unit = .kgL
@@ -306,14 +306,14 @@ public class GlucoseMeasurement : NSObject {
         let location = sampleLocationAndDataTypeData.highNibbleAtPosition()
         
         self.sampleType = SampleType(rawValue: type)
-        print("type: \(self.sampleType)")
+        print("type: \(self.sampleType?.description)")
         
         if(location > 4) {
             print("sample location is reserved for future use")
             self.sampleLocation = .reserved
         } else {
             self.sampleLocation = SampleLocation(rawValue: location)
-            print("sample location: \(self.sampleLocation)")
+            print("sample location: \(self.sampleLocation?.description)")
         }
         
         indexCounter += 1
@@ -321,7 +321,7 @@ public class GlucoseMeasurement : NSObject {
     
     func parseSensorStatusAnnunciation() {
         print("parseSensorStatusAnnunciation [indexCounter:\(indexCounter)]")
-        let sensorStatusAnnunciationData = data.dataRange(indexCounter, Length: 2)
+        let sensorStatusAnnunciationData = data.dataRange(indexCounter, Length: 2).swapUInt16Data()
         let sensorStatusAnnunciationString = sensorStatusAnnunciationData.toHexString()
         let sensorStatusAnnunciationBytes = Int(strtoul(sensorStatusAnnunciationString, nil, 16))
         print("sensorStatusAnnunciation bytes: \(sensorStatusAnnunciationBytes)")

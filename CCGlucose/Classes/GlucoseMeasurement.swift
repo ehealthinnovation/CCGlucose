@@ -91,13 +91,12 @@ public class GlucoseMeasurement : NSObject {
     public var unit : GlucoseConcentrationUnits
     public var sampleType: SampleType?
     public var sampleLocation: SampleLocation?
-
     
     //flags
     var timeOffsetPresent: Bool
     var glucoseConcentrationTypeAndSampleLocationPresent: Bool
     var sensorStatusAnnunciationPresent: Bool
-    var contextInformationFollows: Bool
+    public var contextInformationFollows: Bool
     
     // the following methods have been added to allow access optional types (e.g. Int, Float, Bool)
     // that have no equivalent in objective-c. They can be removed once we no longer require objective-c compatibility

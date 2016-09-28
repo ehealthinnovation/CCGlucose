@@ -17,6 +17,7 @@ import CCToolbox
     func glucoseMeasurementContext(measurementContext:GlucoseMeasurementContext)
     func glucoseFeatures(features:GlucoseFeatures)
     func glucoseMeterConnected(meter: CBPeripheral)
+    func glucoseMeterDisconnected(meter: CBPeripheral)
 }
 
 @objc public protocol GlucoseMeterDiscoveryProtocol {
@@ -55,7 +56,7 @@ public class Glucose : NSObject {
     public init(cbPeripheral:CBPeripheral!) {
         super.init()
         print("Glucose#init[cbPeripheral]")
-        self.peripheral = cbPeripheral
+        //self.peripheral = cbPeripheral
         self.configureBluetoothParameters()
         self.connectToGlucoseMeter(glucoseMeter: cbPeripheral)
     }
@@ -65,6 +66,14 @@ public class Glucose : NSObject {
         print("Glucose#init")
         self.peripheralName = peripheralName
         self.configureBluetoothParameters()
+    }
+    
+    //TO-DO
+    public init(uuidString:String) {
+        super.init()
+        print("Glucose#init")
+        self.configureBluetoothParameters()
+        self.reconnectToGlucoseMeter(uuidString: uuidString)
     }
     
     func configureBluetoothParameters() {
@@ -78,9 +87,15 @@ public class Glucose : NSObject {
     }
 
     public func connectToGlucoseMeter(glucoseMeter: CBPeripheral) {
-        self.peripheral = glucoseMeter
+        //self.peripheral = glucoseMeter
         Bluetooth.sharedInstance().stopScanning()
         Bluetooth.sharedInstance().connectPeripheral(glucoseMeter)
+    }
+    
+    public func reconnectToGlucoseMeter(uuidString: String) {
+        //self.peripheral = glucoseMeter
+        Bluetooth.sharedInstance().stopScanning()
+        Bluetooth.sharedInstance().reconnectPeripheral(uuidString)
     }
     
     public func disconnectGlucoseMeter() {
@@ -254,8 +269,9 @@ extension Glucose: BluetoothPeripheralProtocol {
         print("Glucose#didDiscoverPeripheral")
         if(self.peripheralName != nil) {
             if(cbPeripheral.name == self.peripheralName) {
-                self.peripheral = cbPeripheral
-                Bluetooth.sharedInstance().connectPeripheral(self.peripheral)
+                //self.peripheral = cbPeripheral
+                //Bluetooth.sharedInstance().connectPeripheral(self.peripheral)
+                Bluetooth.sharedInstance().connectPeripheral(cbPeripheral)
             }
         } else if(self.peripheral != nil) {
             Bluetooth.sharedInstance().connectPeripheral(self.peripheral)
@@ -266,9 +282,15 @@ extension Glucose: BluetoothPeripheralProtocol {
     
     public func didConnectPeripheral(_ cbPeripheral:CBPeripheral) {
         print("Glucose#didConnectPeripheral")
+        self.peripheral = cbPeripheral
         glucoseDelegate.glucoseMeterConnected(meter: cbPeripheral)
         
         Bluetooth.sharedInstance().discoverAllServices(cbPeripheral)
+    }
+    
+    public func didDisconnectPeripheral(_ cbPeripheral: CBPeripheral) {
+        self.peripheral = nil
+        glucoseDelegate.glucoseMeterDisconnected(meter: cbPeripheral)
     }
 }
 

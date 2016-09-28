@@ -41,10 +41,14 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
     }
     
     // MARK: - GlucoseProtocol
-    
     func glucoseMeterConnected(meter: CBPeripheral) {
         print("GlucoseMeterViewController#glucoseMeterConnected")
         meterConnected = true
+    }
+    
+    public func glucoseMeterDisconnected(meter: CBPeripheral) {
+        print("GlucoseMeterViewController#glucoseMeterDisconnected")
+        meterConnected = false
     }
     
     func numberOfStoredRecords(number: UInt16) {
@@ -157,8 +161,9 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
             case 2:
                 let measurement = Array(glucoseMeasurements)[indexPath.row]
                 let mmolString : String = (measurement.toMMOL()?.description)!
+                let contextWillFollow : Bool = (measurement.contextInformationFollows)
                 
-                cell.textLabel!.text = "(\(measurement.sequenceNumber)) \(measurement.glucoseConcentration) \(measurement.unit.description) (\(mmolString) mmol/L)"
+                cell.textLabel!.text = "[\(contextWillFollow.description)] (\(measurement.sequenceNumber)) \(measurement.glucoseConcentration) \(measurement.unit.description) (\(mmolString) mmol/L)"
                 
                 cell.detailTextLabel!.text = measurement.dateTime?.description
             default:

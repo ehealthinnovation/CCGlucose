@@ -63,4 +63,9 @@
     NSLog(@"%s", __PRETTY_FUNCTION__);
 }
 
+- (void)glucoseMeterDisconnectedWithMeter:(CBPeripheral * _Nonnull)meter;
+{
+    NSLog(@"%s", __PRETTY_FUNCTION__);
+}
+
 @end

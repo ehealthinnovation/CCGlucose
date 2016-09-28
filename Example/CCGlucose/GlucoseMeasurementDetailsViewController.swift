@@ -123,13 +123,13 @@ class GlucoseMeasurementDetailsViewController: UITableViewController {
                 cell.textLabel!.text = glucoseMeasurementContext.sequenceNumber?.description
                 cell.detailTextLabel!.text = "Sequence number"
             case 1:
-                cell.textLabel!.text = glucoseMeasurementContext.carbohydrateID
+                cell.textLabel!.text = glucoseMeasurementContext.carbohydrateID?.description
                 cell.detailTextLabel!.text = "Carbohydrate"
             case 2:
                 cell.textLabel!.text = glucoseMeasurementContext.carbohydrateWeight?.description
                 cell.detailTextLabel!.text = "Carbohydrate weight"
             case 3:
-                cell.textLabel!.text = glucoseMeasurementContext.meal
+                cell.textLabel!.text = glucoseMeasurementContext.meal?.description
                 cell.detailTextLabel!.text = "Meal"
             case 4:
                 cell.textLabel!.text = glucoseMeasurementContext.tester

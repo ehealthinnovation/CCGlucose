@@ -9,28 +9,66 @@
 import Foundation
 
 
-enum CarbohydrateID : String {
-    case reserved = "Reserved",
-    breakfast = "breakfast",
-    lunch = "lunch",
-    dinner = "dinner",
-    snack = "snack",
-    drink = "drink",
-    supper = "supper",
-    brunch = "brunch"
+// Based on Bluetooth spec:
+// https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.glucose_measurement_context.xml
+public enum CarbohydrateID : Int {
+    case reserved = 0,
+    breakfast,
+    lunch,
+    dinner,
+    snack,
+    drink,
+    supper,
+    brunch
+  
+    public var description: String {
+        switch self {
+        case .breakfast:
+            return NSLocalizedString("Breakfast", comment:"")
+        case .lunch:
+            return NSLocalizedString("Lunch", comment:"")
+        case .dinner:
+            return NSLocalizedString("Dinner", comment:"")
+        case .snack:
+            return NSLocalizedString("Snack", comment:"")
+        case .drink:
+            return NSLocalizedString("Drink", comment:"")
+        case .supper:
+            return NSLocalizedString("Supper", comment:"")
+        case .brunch:
+            return NSLocalizedString("Brunch", comment:"")
+        case .reserved:
+            return NSLocalizedString("Reserved", comment:"")
+        }
+    }
     
-    static let allValues = [reserved, breakfast, lunch, dinner, snack, drink, supper, brunch]
 }
 
-enum Meals : String {
-    case reserved = "Reserved",
-    preprandialBeforeMeal = "Preprandial (before meal)",
-    preprandialAfterMeal = "Preprandial (after meal)",
-    fasting = "Fasting",
-    casual = "Casual",
-    bedtime = "Bedtime"
+/// confusing name is from the Bluetooth spec. This concerns the timing around a meal
+public enum Meal : Int {
+    case reserved = 0,
+    preprandialBeforeMeal,
+    postprandialAfterMeal,
+    fasting,
+    casual,
+    bedtime
     
-    static let allValues = [reserved, preprandialBeforeMeal, preprandialAfterMeal, fasting, casual, bedtime]
+    public var description: String {
+        switch self {
+        case .reserved:
+            return NSLocalizedString("Reserved", comment:"")
+        case .preprandialBeforeMeal:
+            return NSLocalizedString("Preprandial (before meal)", comment:"")
+        case .postprandialAfterMeal:
+            return NSLocalizedString("Postprandial (after meal)", comment:"")
+        case .fasting:
+            return NSLocalizedString("Fasting", comment:"")
+        case .casual:
+            return NSLocalizedString("Casual", comment:"")
+        case .bedtime:
+            return NSLocalizedString("Bedtime", comment:"")
+        }
+    }
 }
 
 enum Tester : String {
@@ -80,9 +118,9 @@ public class GlucoseMeasurementContext : NSObject {
     var indexCounter: Int = 0
     
     public var sequenceNumber: UInt16?
-    public var carbohydrateID: String?
+    public var carbohydrateID: CarbohydrateID?
     public var carbohydrateWeight: Float?
-    public var meal: String?
+    public var meal: Meal?
     public var tester: String?
     public var health: String?
     public var exerciseDuration: UInt16?
@@ -179,7 +217,9 @@ public class GlucoseMeasurementContext : NSObject {
         let carbohydrateIDData = data.dataRange(indexCounter, Length: 1)
         let carbohydrateIDByte = Int(strtoul(carbohydrateIDData.toHexString(), nil, 16))
         print("carbohydrateIDByte: \(carbohydrateIDByte)")
-        carbohydrateID = (CarbohydrateID.allValues[carbohydrateIDByte].rawValue)
+        if let carbohydrateID = CarbohydrateID(rawValue:carbohydrateIDByte) {
+            self.carbohydrateID = carbohydrateID
+        }
         print("carbohydrateID: \(carbohydrateID)")
         
         indexCounter += 1
@@ -199,7 +239,9 @@ public class GlucoseMeasurementContext : NSObject {
         let mealData = data.dataRange(indexCounter, Length: 1)
         let mealByte = Int(strtoul(mealData.toHexString(), nil, 16))
         print("mealByte: \(mealByte)")
-        meal = (Meals.allValues[mealByte].rawValue)
+        if let meal = Meal(rawValue: mealByte) {
+            self.meal = meal
+        }
         print("meal: \(meal)")
         
         indexCounter += 1

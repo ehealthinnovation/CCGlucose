@@ -22,13 +22,6 @@ class GlucoseMeasurementDetailsViewController: UITableViewController {
         print("glucoseMeasurementContext: \(glucoseMeasurementContext)")
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
-    
     // MARK: Table data source methods
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
@@ -120,7 +113,7 @@ class GlucoseMeasurementDetailsViewController: UITableViewController {
         if(indexPath.section == 2) {
             switch indexPath.row {
             case 0:
-                cell.textLabel!.text = glucoseMeasurementContext.sequenceNumber?.description
+                cell.textLabel!.text = glucoseMeasurementContext.sequenceNumber.description
                 cell.detailTextLabel!.text = "Sequence number"
             case 1:
                 cell.textLabel!.text = glucoseMeasurementContext.carbohydrateID?.description

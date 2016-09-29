@@ -11,7 +11,7 @@ import Foundation
 
 // Based on Bluetooth spec:
 // https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.glucose_measurement_context.xml
-public enum CarbohydrateID : Int {
+@objc public enum CarbohydrateID : Int {
     case reserved = 0,
     breakfast,
     lunch,
@@ -45,7 +45,7 @@ public enum CarbohydrateID : Int {
 }
 
 /// confusing name is from the Bluetooth spec. This concerns the timing around a meal
-public enum Meal : Int {
+@objc public enum Meal : Int {
     case reserved = 0,
     preprandialBeforeMeal,
     postprandialAfterMeal,
@@ -104,11 +104,18 @@ enum MedicationID : String {
     static let allValues = [reserved, rapidActingInsulin, shortActingInsulin, intermediateActingInsulin, longActingInsulin, premixedInsulin]
 }
 
-enum MedicationValueUnits : String {
-    case kilograms = "kilograms",
-    liters = "liters"
+public enum MedicationValueUnit : Int {
+    case kilograms = 0,
+    liters
     
-    static let allValues = [kilograms, liters]
+    public var description : String {
+        switch self {
+        case .kilograms:
+            return NSLocalizedString("kilograms", comment: "")
+        case .liters:
+            return NSLocalizedString("liters", comment: "")
+        }
+    }
 }
 
 
@@ -117,7 +124,7 @@ public class GlucoseMeasurementContext : NSObject {
     var data: NSData
     var indexCounter: Int = 0
     
-    public var sequenceNumber: UInt16?
+    public var sequenceNumber: UInt16
     public var carbohydrateID: CarbohydrateID?
     public var carbohydrateWeight: Float?
     public var meal: Meal?
@@ -129,23 +136,69 @@ public class GlucoseMeasurementContext : NSObject {
     public var medication: Float?
     public var hbA1c: Float?
     
+    // note: these methods are required to allow objc to access an optional enum
+
+    public var objc_hasMeal: Bool {
+        return self.meal == nil ? false : true;
+    }
+    
+    public var objc_meal: Meal {
+        return self.meal!
+    }
+
+    public var objc_hasCarbohydrateID: Bool {
+        return self.carbohydrateID == nil ? false : true;
+    }
+    
+    public var objc_carbohydrateID: CarbohydrateID {
+        return self.carbohydrateID!
+    }
+
     //flags
-    var carbohydrateIDAndCarbohydratePresent: Bool?
-    var mealPresent: Bool?
-    var testerHealthPresent: Bool?
-    var exerciseDurationAndExerciseIntensityPresent: Bool?
-    var medicationIDAndMedicationPresent: Bool?
-    var medicationValueUnits: String?
-    var hbA1cPresent: Bool?
-    var extendedFlagsPresent: Bool?
+    var carbohydrateIDAndCarbohydratePresent: Bool
+    var mealPresent: Bool
+    var testerHealthPresent: Bool
+    var exerciseDurationAndExerciseIntensityPresent: Bool
+    var medicationIDAndMedicationPresent: Bool
+    var medicationValueUnits: String
+    var hbA1cPresent: Bool
+    var extendedFlagsPresent: Bool
     
-    
-    init(data: NSData?) {
-        self.data = data!
+    class func parseSequenceNumber(data: NSData) -> UInt16 {
+        let index = 1
+        print("parseSequenceNumber [indexCounter:\(index)]")
+        let sequenceNumberData = data.dataRange(index, Length: 2)
+        let swappedSequenceNumberData = sequenceNumberData.swapUInt16Data()
+        let swappedSequenceNumberString = swappedSequenceNumberData.toHexString()
+        let sequenceNumber = UInt16(strtoul(swappedSequenceNumberString, nil, 16))
+        print("sequenceNumber: \(sequenceNumber)")
+        return sequenceNumber
+    }
+
+    init(data: NSData) {
+        self.data = data
+        
+        let flags = GlucoseMeasurement.extractFlags(data: data)
+        
+        self.carbohydrateIDAndCarbohydratePresent = GlucoseMeasurement.extractBit(bit: 0, byte: flags)
+        self.mealPresent = GlucoseMeasurement.extractBit(bit: 1, byte: flags)
+        self.testerHealthPresent = GlucoseMeasurement.extractBit(bit: 2, byte: flags)
+        self.exerciseDurationAndExerciseIntensityPresent = GlucoseMeasurement.extractBit(bit: 3, byte: flags)
+        self.medicationIDAndMedicationPresent = GlucoseMeasurement.extractBit(bit: 4, byte: flags)
+        
+        let unit = MedicationValueUnit(rawValue: flags.bit(5))!
+        self.medicationValueUnits = unit.description
+        
+        self.hbA1cPresent = GlucoseMeasurement.extractBit(bit: 6, byte: flags)
+        self.extendedFlagsPresent = GlucoseMeasurement.extractBit(bit: 7, byte: flags)
+        
+        self.sequenceNumber = GlucoseMeasurementContext.parseSequenceNumber(data: data)
+        
         super.init()
+
+        self.indexCounter = 3; // parseFlags (1) + parseSequenceNumber (2)
+        
         print("GlucoseMeasurementContext#init - \(self.data)")
-        parseFlags()
-        parseSequenceNumber()
         
         if(extendedFlagsPresent == true) {
             parseExtendedFlags()
@@ -179,34 +232,6 @@ public class GlucoseMeasurementContext : NSObject {
         }
     }
     
-    func parseFlags() {
-        let flagsData = data.dataRange(indexCounter, Length: 1)
-        var flagsString = flagsData.toHexString()
-        var flagsByte = Int(strtoul(flagsString, nil, 16))
-        print("flags byte: \(flagsByte)")
-        
-        carbohydrateIDAndCarbohydratePresent = flagsByte.bit(0).toBool()
-        mealPresent = flagsByte.bit(1).toBool()
-        testerHealthPresent = flagsByte.bit(2).toBool()
-        exerciseDurationAndExerciseIntensityPresent = flagsByte.bit(3).toBool()
-        medicationIDAndMedicationPresent = flagsByte.bit(4).toBool()
-        medicationValueUnits = MedicationValueUnits.allValues[flagsByte.bit(5)].rawValue
-        hbA1cPresent = flagsByte.bit(6).toBool()
-        extendedFlagsPresent = flagsByte.bit(7).toBool()
-        
-        indexCounter += 1
-    }
-    
-    func parseSequenceNumber() {
-        print("parseSequenceNumber [indexCounter:\(indexCounter)]")
-        let sequenceNumberData = data.dataRange(indexCounter, Length: 2)
-        let swappedSequenceNumberData = sequenceNumberData.swapUInt16Data()
-        let swappedSequenceNumberString = swappedSequenceNumberData.toHexString()
-        sequenceNumber = UInt16(strtoul(swappedSequenceNumberString, nil, 16))
-        print("sequenceNumber: \(sequenceNumber)")
-        
-        indexCounter += 2
-    }
 
     func parseExtendedFlags() {
         //indexCounter += 1

@@ -74,11 +74,6 @@ import Foundation
 
 }
 
-public enum GlucoseError : Error {
-    case outOfBounds
-    case invalidInput
-}
-
 public class GlucoseMeasurement : NSObject {
     //raw data
     let data: NSData

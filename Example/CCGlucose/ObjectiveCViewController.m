@@ -15,11 +15,27 @@
 
 @implementation ObjectiveCViewController
 
-- (void)viewDidLoad {
+// note: view controller is just for testing that methods can compile in obj
+
+- (void)viewDidLoad;
+{
     [super viewDidLoad];
     
-
     self.glucose = [[Glucose alloc] init];
+    
+    GlucoseMeasurementContext *context = nil;
+    
+    
+    if (context.objc_hasCarbohydrateID) {
+        CarbohydrateID carb = context.objc_carbohydrateID;
+        NSLog(@"carb: %d", (int)carb);
+    }
+    
+    if (context.objc_hasMeal) {
+        Meal meal = context.objc_meal;
+        NSLog(@"meal: %d", (int)meal);
+    }
+    
 }
 
 - (void)didReceiveMemoryWarning {

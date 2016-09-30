@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'CCGlucose'
-  s.version          = '0.2.6'
+  s.version          = '0.2.7'
   s.summary          = 'A short description of CCGlucose.'
 
 # This description is used to generate tags and improve search results.
@@ -20,6 +20,10 @@ Pod::Spec.new do |s|
   s.description      = <<-DESC
 
 Changelog
+
+0.2.7: added GlucoseMeasurementContextMeal for Meal
+
+0.2.6: more objc support for GlucoseMeasurementContext
 
 0.2.5: added objc support for GlucoseMeasurementContext
 

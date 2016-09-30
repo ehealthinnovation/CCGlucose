@@ -44,8 +44,11 @@ import Foundation
     
 }
 
-/// confusing name is from the Bluetooth spec. This concerns the timing around a meal
-@objc public enum Meal : Int {
+/// the confusing name 'Meal' is from the Bluetooth spec. It concerns the timing *around* a meal
+/// 'Meal' is too generic (app might have a Meal class), so an alias is required
+public typealias Meal = GlucoseMeasurementContextMeal
+
+@objc public enum GlucoseMeasurementContextMeal : Int {
     case reserved = 0,
     preprandialBeforeMeal,
     postprandialAfterMeal,
@@ -70,6 +73,7 @@ import Foundation
         }
     }
 }
+
 
 enum Tester : String {
     case reserved = "Reserved",
@@ -142,7 +146,7 @@ public class GlucoseMeasurementContext : NSObject {
         return self.meal == nil ? false : true;
     }
     
-    public var objc_meal: Meal {
+    public var objc_meal: GlucoseMeasurementContextMeal {
         return self.meal!
     }
 

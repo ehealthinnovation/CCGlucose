@@ -25,9 +25,19 @@ import CCToolbox
 }
 
 public class Glucose : NSObject {
-    public var glucoseDelegate : GlucoseProtocol!
-    public var glucoseMeterDiscoveryDelegate: GlucoseMeterDiscoveryProtocol!
-    var peripheral : CBPeripheral!
+    public weak var glucoseDelegate : GlucoseProtocol?
+    public weak var glucoseMeterDiscoveryDelegate: GlucoseMeterDiscoveryProtocol?
+    var peripheral : CBPeripheral? {
+        didSet {
+            if (peripheral != nil) { // don't wipe the UUID when we disconnect and clear the peripheral
+                peripheralUUID = peripheral?.identifier.uuidString
+            }
+        }
+    }
+    
+    // the peripheral might have disconnected, but we still might need the UUID
+    var peripheralUUID: String?
+    
     public var serviceUUIDString:String = "1808"
     public var autoEnableNotifications:Bool = true
     public var allowDuplicates:Bool = false
@@ -42,10 +52,6 @@ public class Glucose : NSObject {
     public internal(set) var modelNumber : String?
     public internal(set) var serialNumber : String?
     public internal(set) var firmwareVersion : String?
-    
-    public var uuid : String {
-        return self.peripheral.identifier.uuidString
-    }
     
     public override init() {
         super.init()
@@ -76,10 +82,17 @@ public class Glucose : NSObject {
         self.reconnectToGlucoseMeter(uuidString: uuidString)
     }
     
+    public var uuid : String? {
+        if let peripheral = self.peripheral {
+            return peripheral.identifier.uuidString
+        }
+        return peripheralUUID
+    }
+
     func configureBluetoothParameters() {
         Bluetooth.sharedInstance().serviceUUIDString = "1808"
         Bluetooth.sharedInstance().allowDuplicates = false
-        Bluetooth.sharedInstance().autoEnableNotifications = true
+        Bluetooth.sharedInstance().autoEnableNotifications = true // FIXME: should be configured or use delegate, not both
         Bluetooth.sharedInstance().bluetoothDelegate = self
         Bluetooth.sharedInstance().bluetoothPeripheralDelegate = self
         Bluetooth.sharedInstance().bluetoothServiceDelegate = self
@@ -93,18 +106,19 @@ public class Glucose : NSObject {
     }
     
     public func reconnectToGlucoseMeter(uuidString: String) {
-        //self.peripheral = glucoseMeter
         Bluetooth.sharedInstance().stopScanning()
         Bluetooth.sharedInstance().reconnectPeripheral(uuidString)
     }
     
     public func disconnectGlucoseMeter() {
-        Bluetooth.sharedInstance().disconnectPeripheral(self.peripheral)
+        if let peripheral = self.peripheral {
+            Bluetooth.sharedInstance().disconnectPeripheral(peripheral)
+        }
     }
     
     func parseFeaturesResponse(data: NSData) {
         self.glucoseFeatures = GlucoseFeatures(data: data)
-        glucoseDelegate.glucoseFeatures(features: self.glucoseFeatures)
+        glucoseDelegate?.glucoseFeatures(features: self.glucoseFeatures)
     }
     
     func parseRACPReponse(data:NSData) {
@@ -117,7 +131,7 @@ public class Glucose : NSObject {
             print("numberOfStoredRecordsResponse")
             let numberOfStoredRecordsStr = data.swapUInt16Data().toHexString().subStringWithRange(4, to: 8)
             let numberOfStoredRecords = UInt16(strtoul(numberOfStoredRecordsStr, nil, 16))
-            glucoseDelegate.numberOfStoredRecords(number: numberOfStoredRecords)
+            glucoseDelegate?.numberOfStoredRecords(number: numberOfStoredRecords)
         }
         if(hexStringHeader == responseCode) {
             print("responseCode")
@@ -128,24 +142,28 @@ public class Glucose : NSObject {
     
     func parseGlucoseMeasurement(data:NSData) {
         let glucoseMeasurement = GlucoseMeasurement(data: data)
-        glucoseDelegate.glucoseMeasurement(measurement: glucoseMeasurement)
+        glucoseDelegate?.glucoseMeasurement(measurement: glucoseMeasurement)
     }
     
     func parseGlucoseMeasurementContext(data:NSData) {
         let glucoseMeasurementContext = GlucoseMeasurementContext(data: data)
-        glucoseDelegate.glucoseMeasurementContext(measurementContext: glucoseMeasurementContext)
+        glucoseDelegate?.glucoseMeasurementContext(measurementContext: glucoseMeasurementContext)
     }
     
     public func readNumberOfRecords() {
         print("Glucose#readNumberOfRecords")
         let data = readNumberOfStoredRecords.dataFromHexadecimalString()
-        Bluetooth.sharedInstance().writeCharacteristic(self.peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: data! as Data)
+        if let peripheral = self.peripheral {
+            Bluetooth.sharedInstance().writeCharacteristic(peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: data! as Data)
+        }
     }
     
     public func downloadAllRecords() {
         print("Glucose#downloadAllRecords")
         let data = readAllStoredRecords.dataFromHexadecimalString()
-        Bluetooth.sharedInstance().writeCharacteristic(self.peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: data! as Data)
+        if let peripheral = self.peripheral {
+            Bluetooth.sharedInstance().writeCharacteristic(peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: data! as Data)
+        }
     }
     
     public func downloadRecordNumber(recordNumber: Int) {
@@ -162,7 +180,9 @@ public class Glucose : NSObject {
         
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()
-        Bluetooth.sharedInstance().writeCharacteristic(self.peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: commandData! as Data)
+        if let peripheral = self.peripheral {
+            Bluetooth.sharedInstance().writeCharacteristic(peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: commandData! as Data)
+        }
     }
     
     public func downloadRecordsWithRange(from: Int , to: Int) {
@@ -183,7 +203,9 @@ public class Glucose : NSObject {
         
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()
-        Bluetooth.sharedInstance().writeCharacteristic(self.peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: commandData! as Data)
+        if let peripheral = self.peripheral {
+            Bluetooth.sharedInstance().writeCharacteristic(peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: commandData! as Data)
+        }
     }
     
     public func downloadRecordsGreaterThanAndEqualTo(recordNumber: Int) {
@@ -198,7 +220,9 @@ public class Glucose : NSObject {
 
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()
-        Bluetooth.sharedInstance().writeCharacteristic(self.peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: commandData! as Data)
+        if let peripheral = self.peripheral {
+            Bluetooth.sharedInstance().writeCharacteristic(peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: commandData! as Data)
+        }
     }
     
     public func downloadRecordsLessThanAndEqualTo(recordNumber: Int) {
@@ -213,26 +237,34 @@ public class Glucose : NSObject {
         
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()
-        Bluetooth.sharedInstance().writeCharacteristic(self.peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: commandData! as Data)
+        if let peripheral = self.peripheral {
+            Bluetooth.sharedInstance().writeCharacteristic(peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: commandData! as Data)
+        }
     }
     
     public func downloadFirstRecord() {
         let command = "0105"
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()
-        Bluetooth.sharedInstance().writeCharacteristic(self.peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: commandData! as Data)
+        if let peripheral = self.peripheral {
+            Bluetooth.sharedInstance().writeCharacteristic(peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: commandData! as Data)
+        }
     }
     
     public func downloadLastRecord() {
         let command = "0106"
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()
-        Bluetooth.sharedInstance().writeCharacteristic(self.peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: commandData! as Data)
+        if let peripheral = self.peripheral {
+            Bluetooth.sharedInstance().writeCharacteristic(peripheral.findCharacteristicByUUID(recordAccessControlPointCharacteristic)!, data: commandData! as Data)
+        }
     }
     
     public func readGlucoseFeatures() {
         print("Glucose#readGlucoseFeatures")
-        Bluetooth.sharedInstance().readCharacteristic(self.peripheral.findCharacteristicByUUID(glucoseFeatureCharacteristic)!)
+        if let peripheral = self.peripheral {
+            Bluetooth.sharedInstance().readCharacteristic(peripheral.findCharacteristicByUUID(glucoseFeatureCharacteristic)!)
+        }
     }
 }
 
@@ -240,6 +272,7 @@ extension Glucose: BluetoothProtocol {
     public func scanForGlucoseMeters() {
         Bluetooth.sharedInstance().startScanning(self.allowDuplicates)
         
+        // FIXME: if start scanning should be called twice, then this requires a comment
         if(self.allowedToScanForPeripherals) {
             Bluetooth.sharedInstance().startScanning(self.allowDuplicates)
         }
@@ -248,8 +281,8 @@ extension Glucose: BluetoothProtocol {
     public func bluetoothIsAvailable() {
         self.allowedToScanForPeripherals = true
         
-        if(self.peripheral != nil) {
-            Bluetooth.sharedInstance().connectPeripheral(self.peripheral)
+        if let peripheral = self.peripheral {
+            Bluetooth.sharedInstance().connectPeripheral(peripheral)
         } else {
             Bluetooth.sharedInstance().startScanning(self.allowDuplicates)
         }
@@ -265,32 +298,34 @@ extension Glucose: BluetoothProtocol {
 }
 
 extension Glucose: BluetoothPeripheralProtocol {
-    public func didDiscoverPeripheral(_ cbPeripheral:CBPeripheral) {
+    public func didDiscoverPeripheral(_ peripheral:CBPeripheral) {
         print("Glucose#didDiscoverPeripheral")
+        // !!!: keep a reference to the peripheral to avoid the error:
+        // "API MISUSE: Cancelling connection for unused peripheral <private>, Did you forget to keep a reference to it?"
+        self.peripheral = peripheral
         if(self.peripheralName != nil) {
-            if(cbPeripheral.name == self.peripheralName) {
-                //self.peripheral = cbPeripheral
-                //Bluetooth.sharedInstance().connectPeripheral(self.peripheral)
-                Bluetooth.sharedInstance().connectPeripheral(cbPeripheral)
+            if(peripheral.name == self.peripheralName) {
+                Bluetooth.sharedInstance().connectPeripheral(peripheral)
             }
-        } else if(self.peripheral != nil) {
-            Bluetooth.sharedInstance().connectPeripheral(self.peripheral)
+//        } else if(self.peripheral != nil) { // ???: why auto-connect if we have an existing peripheral?
+//            self.peripheral = peripheral
+//            Bluetooth.sharedInstance().connectPeripheral(peripheral)
         } else {
-            glucoseMeterDiscoveryDelegate.glucoseMeterDiscovered(glucoseMeter: cbPeripheral)
+            glucoseMeterDiscoveryDelegate?.glucoseMeterDiscovered(glucoseMeter: peripheral)
         }
     }
     
     public func didConnectPeripheral(_ cbPeripheral:CBPeripheral) {
         print("Glucose#didConnectPeripheral")
         self.peripheral = cbPeripheral
-        glucoseDelegate.glucoseMeterConnected(meter: cbPeripheral)
+        glucoseDelegate?.glucoseMeterConnected(meter: cbPeripheral)
         
         Bluetooth.sharedInstance().discoverAllServices(cbPeripheral)
     }
     
     public func didDisconnectPeripheral(_ cbPeripheral: CBPeripheral) {
         self.peripheral = nil
-        glucoseDelegate.glucoseMeterDisconnected(meter: cbPeripheral)
+        glucoseDelegate?.glucoseMeterDisconnected(meter: cbPeripheral)
     }
 }
 
@@ -328,7 +363,7 @@ extension Glucose: BluetoothServiceProtocol {
                         print("")
                     }
                 } else {
-                    print("Warn: no value for chracteristic: \(characteristic.uuid.uuidString)")
+                    print("Warn: no value for characteristic: \(characteristic.uuid.uuidString)")
                 }
             }
         }
@@ -340,20 +375,19 @@ extension Glucose: BluetoothCharacteristicProtocol {
        print("Glucose#didUpdateValueForCharacteristic: \(characteristic) value:\(characteristic.value)")
         if(characteristic.uuid.uuidString == glucoseFeatureCharacteristic) {
             self.parseFeaturesResponse(data: characteristic.value! as NSData)
-        }
-        if(characteristic.uuid.uuidString == recordAccessControlPointCharacteristic) {
+        } else if(characteristic.uuid.uuidString == recordAccessControlPointCharacteristic) {
             self.parseRACPReponse(data: characteristic.value! as NSData)
-        }
-        if(characteristic.uuid.uuidString == glucoseMeasurementCharacteristic) {
+        } else if(characteristic.uuid.uuidString == glucoseMeasurementCharacteristic) {
             self.parseGlucoseMeasurement(data: characteristic.value! as NSData)
-        }
-        if(characteristic.uuid.uuidString == glucoseMeasurementContextCharacteristic) {
+        } else if(characteristic.uuid.uuidString == glucoseMeasurementContextCharacteristic) {
             self.parseGlucoseMeasurementContext(data: characteristic.value! as NSData)
+        } else {
+            print("Characteristic not handled: \(characteristic)")
         }
     }
     
     public func didUpdateNotificationStateFor(_ characteristic:CBCharacteristic) {
-        print("Glucose#didUpdateNotificationStateFor")
+        print("Glucose#didUpdateNotificationStateFor characteristic: \(characteristic.uuid.uuidString)")
         if(characteristic.uuid.uuidString == recordAccessControlPointCharacteristic) {
             readGlucoseFeatures()
             readNumberOfRecords()

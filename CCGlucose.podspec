@@ -8,8 +8,8 @@
 
 Pod::Spec.new do |s|
   s.name             = 'CCGlucose'
-  s.version          = '0.2.7'
-  s.summary          = 'A short description of CCGlucose.'
+  s.version          = '0.2.8'
+  s.summary          = 'Support for the Bluetooth Glucose Profile'
 
 # This description is used to generate tags and improve search results.
 #   * Think: What does it do? Why did you write it? What is the focus?
@@ -20,6 +20,8 @@ Pod::Spec.new do |s|
   s.description      = <<-DESC
 
 Changelog
+
+0.2.8: fix for peripheral being prematurely released
 
 0.2.7: added GlucoseMeasurementContextMeal for Meal
 

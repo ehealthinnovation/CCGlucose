@@ -558,6 +558,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 1EF9B326796DF9BBF8E3C6CD /* Pods-CCGlucose_Tests.debug.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				DEVELOPMENT_TEAM = F663BTMH9Q;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
@@ -575,6 +576,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97C5F8D1DA6ABD712FE940D /* Pods-CCGlucose_Tests.release.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				DEVELOPMENT_TEAM = F663BTMH9Q;
 				INFOPLIST_FILE = Tests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";

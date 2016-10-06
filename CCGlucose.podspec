@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'CCGlucose'
-  s.version          = '0.2.8'
+  s.version          = '0.2.9'
   s.summary          = 'Support for the Bluetooth Glucose Profile'
 
 # This description is used to generate tags and improve search results.
@@ -20,6 +20,8 @@ Pod::Spec.new do |s|
   s.description      = <<-DESC
 
 Changelog
+
+0.2.9: expose peripheral name
 
 0.2.8: fix for peripheral being prematurely released
 

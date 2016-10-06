@@ -30,13 +30,11 @@ public class Glucose : NSObject {
     var peripheral : CBPeripheral? {
         didSet {
             if (peripheral != nil) { // don't wipe the UUID when we disconnect and clear the peripheral
-                peripheralUUID = peripheral?.identifier.uuidString
+                uuid = peripheral?.identifier.uuidString
+                name = peripheral?.name
             }
         }
     }
-    
-    // the peripheral might have disconnected, but we still might need the UUID
-    var peripheralUUID: String?
     
     public var serviceUUIDString:String = "1808"
     public var autoEnableNotifications:Bool = true
@@ -44,10 +42,12 @@ public class Glucose : NSObject {
     public var batteryProfileSupported:Bool = false
     public var glucoseFeatures:GlucoseFeatures!
     
-    var peripheralName : String!
+    var peripheralNameToConnectTo : String?
     var servicesAndCharacteristics : [String: [CBCharacteristic]] = [:]
     var allowedToScanForPeripherals:Bool = false
     
+    public internal(set) var uuid: String?
+    public internal(set) var name: String? // local name
     public internal(set) var manufacturerName : String?
     public internal(set) var modelNumber : String?
     public internal(set) var serialNumber : String?
@@ -59,22 +59,21 @@ public class Glucose : NSObject {
         self.configureBluetoothParameters()
     }
     
-    public init(cbPeripheral:CBPeripheral!) {
+    public init(peripheral:CBPeripheral!) {
         super.init()
-        print("Glucose#init[cbPeripheral]")
-        //self.peripheral = cbPeripheral
+        print("Glucose#init[peripheral]")
+        self.peripheral = peripheral
         self.configureBluetoothParameters()
-        self.connectToGlucoseMeter(glucoseMeter: cbPeripheral)
+        self.connectToGlucoseMeter(glucoseMeter: peripheral)
     }
     
     public init(peripheralName:String) {
         super.init()
         print("Glucose#init")
-        self.peripheralName = peripheralName
+        self.peripheralNameToConnectTo = peripheralName
         self.configureBluetoothParameters()
     }
     
-    //TO-DO
     public init(uuidString:String) {
         super.init()
         print("Glucose#init")
@@ -82,13 +81,6 @@ public class Glucose : NSObject {
         self.reconnectToGlucoseMeter(uuidString: uuidString)
     }
     
-    public var uuid : String? {
-        if let peripheral = self.peripheral {
-            return peripheral.identifier.uuidString
-        }
-        return peripheralUUID
-    }
-
     func configureBluetoothParameters() {
         Bluetooth.sharedInstance().serviceUUIDString = "1808"
         Bluetooth.sharedInstance().allowDuplicates = false
@@ -303,13 +295,10 @@ extension Glucose: BluetoothPeripheralProtocol {
         // !!!: keep a reference to the peripheral to avoid the error:
         // "API MISUSE: Cancelling connection for unused peripheral <private>, Did you forget to keep a reference to it?"
         self.peripheral = peripheral
-        if(self.peripheralName != nil) {
-            if(peripheral.name == self.peripheralName) {
+        if (self.peripheralNameToConnectTo != nil) {
+            if (peripheral.name == self.peripheralNameToConnectTo) {
                 Bluetooth.sharedInstance().connectPeripheral(peripheral)
             }
-//        } else if(self.peripheral != nil) { // ???: why auto-connect if we have an existing peripheral?
-//            self.peripheral = peripheral
-//            Bluetooth.sharedInstance().connectPeripheral(peripheral)
         } else {
             glucoseMeterDiscoveryDelegate?.glucoseMeterDiscovered(glucoseMeter: peripheral)
         }

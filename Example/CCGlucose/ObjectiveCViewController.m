@@ -23,6 +23,11 @@
     
     self.glucose = [[Glucose alloc] init];
     
+    NSString *uuid = self.glucose.uuid;
+    NSString *name = self.glucose.name;
+    
+    NSLog(@"uuid: %@ name: %@", uuid, name);
+    
     GlucoseMeasurementContext *context = nil;
     
     if (context.objc_hasCarbohydrateID) {

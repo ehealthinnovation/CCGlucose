@@ -88,4 +88,12 @@
     NSLog(@"%s", __PRETTY_FUNCTION__);
 }
 
+- (void)glucoseMeterDidTransferMeasurementsWithError:(NSError *)error {
+    
+}
+
+- (void)glucoseErrorWithError:(NSError*)error
+{
+        
+}
 @end

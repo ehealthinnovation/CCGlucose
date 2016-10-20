@@ -11,6 +11,45 @@ import CoreBluetooth
 import CCBluetooth
 import CCToolbox
 
+@objc public enum transferError : Int {
+    case reserved = 0,
+    success,
+    opCodeNotSupported,
+    invalidOperator,
+    operatorNotSupported,
+    invalidOperand,
+    noRecordsFound,
+    abortUnsuccessful,
+    procedureNotCompleted,
+    operandNotSupported
+    
+    public var description: String {
+        switch self {
+        case .opCodeNotSupported:
+            return NSLocalizedString("Op Code Not Supported", comment:"")
+        case .invalidOperator:
+            return NSLocalizedString("Invalid Operator", comment:"")
+        case .operatorNotSupported:
+            return NSLocalizedString("Operator Not Supported", comment:"")
+        case .invalidOperand:
+            return NSLocalizedString("Invalid Operand", comment:"")
+        case .noRecordsFound:
+            return NSLocalizedString("No Records Found", comment:"")
+        case .abortUnsuccessful:
+            return NSLocalizedString("Abort Unsuccessful", comment:"")
+        case .procedureNotCompleted:
+            return NSLocalizedString("Procedure Not Completed", comment:"")
+        case .operandNotSupported:
+            return NSLocalizedString("Operand Not Supported", comment:"")
+        case .reserved:
+            return NSLocalizedString("Reserved", comment:"")
+        default:
+            return NSLocalizedString("", comment:"")
+        }
+    }
+    
+}
+
 @objc public protocol GlucoseProtocol {
     func numberOfStoredRecords(number: UInt16)
     func glucoseMeasurement(measurement:GlucoseMeasurement)
@@ -18,6 +57,8 @@ import CCToolbox
     func glucoseFeatures(features:GlucoseFeatures)
     func glucoseMeterConnected(meter: CBPeripheral)
     func glucoseMeterDisconnected(meter: CBPeripheral)
+    func glucoseMeterDidTransferMeasurements(error: NSError?)
+    func glucoseError(error: NSError)
 }
 
 @objc public protocol GlucoseMeterDiscoveryProtocol {
@@ -129,6 +170,24 @@ public class Glucose : NSObject {
             print("responseCode")
             var hexStringData = hexString.subStringWithRange(4, to: hexString.characters.count)
             print("hexStringData: \(hexStringData)")
+            
+            let responseStatusString = hexStringData.subStringWithRange(2, to: hexStringData.characters.count)
+            
+            switch responseStatusString {
+            case "01": //Success
+                glucoseDelegate?.glucoseMeterDidTransferMeasurements(error: nil)
+            default:
+                let responseStatusInt: Int? = Int(responseStatusString)
+                let transferErrorString = transferError(rawValue: responseStatusInt!)?.description
+                
+                let userInfo: [NSObject : AnyObject] =
+                [
+                    NSLocalizedDescriptionKey as NSObject :  NSLocalizedString("Transfer Error", value: transferErrorString!, comment: "") as AnyObject,
+                    //NSLocalizedFailureReasonErrorKey as NSObject : NSLocalizedString("", value: "", comment: "") as AnyObject
+                ]
+                let err = NSError(domain: "CCGlucose", code: responseStatusInt!, userInfo: userInfo)
+                glucoseDelegate?.glucoseMeterDidTransferMeasurements(error: err)
+            }
         }
     }
     

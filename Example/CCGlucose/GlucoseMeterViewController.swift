@@ -80,6 +80,21 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         self.refreshTable()
     }
     
+    func glucoseMeterDidTransferMeasurements(error: NSError?) {
+        print("GlucoseMeterViewController#glucoseMeterDidTransferMeasurements")
+        
+        if (nil != error) {
+            print(error?.localizedDescription)
+        } else {
+            print("transfer successful")
+        }
+    }
+    
+    public func glucoseError(error: NSError) {
+        print("GlucoseMeterViewController#glucoseError")
+        print(error.localizedDescription)
+    }
+
     // MARK: - Storyboard
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         let detailsViewController =  segue.destination as! GlucoseMeasurementDetailsViewController

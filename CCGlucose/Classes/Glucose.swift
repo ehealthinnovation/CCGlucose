@@ -383,36 +383,13 @@ extension Glucose: BluetoothServiceProtocol {
     }
 
     public func didDiscoverServiceWithCharacteristics(_ service:CBService) {
-        print("Glucose#didDiscoverServiceWithCharacteristics")
-
+        print("didDiscoverServiceWithCharacteristics - \(service.uuid.uuidString)")
         servicesAndCharacteristics[service.uuid.uuidString] = service.characteristics
         
-        if (service.uuid.uuidString == "180F") {
-            batteryProfileSupported = true
-        }
-        
-        if (service.uuid.uuidString == "180A") {
-            for characteristic in service.characteristics! {
-                if (characteristic.value != nil) {
-                    switch characteristic.uuid.uuidString {
-                    case "2A29":  //manufacturer name
-                        self.manufacturerName = String(data: characteristic.value!, encoding: .utf8)
-                        print("manufacturerName: \(self.manufacturerName)")
-                    case "2A24": //model name
-                        self.modelNumber = String(data: characteristic.value!, encoding: .utf8)
-                        print("modelNumber: \(self.modelNumber)")
-                    case "2A25": //serial number
-                        self.serialNumber = String(data: characteristic.value!, encoding: .utf8)
-                        print("serialNumber: \(self.serialNumber)")
-                    case "2A26": //firmware version
-                        self.firmwareVersion = String(data: characteristic.value!, encoding: .utf8)
-                        print("firmwareVersion: \(self.firmwareVersion)")
-                    default:
-                        print("")
-                    }
-                } else {
-                    print("Warn: no value for characteristic: \(characteristic.uuid.uuidString)")
-                }
+        for characteristic in service.characteristics! {
+            print("reading \(characteristic.uuid.uuidString)")
+            DispatchQueue.global(qos: .background).async {
+                self.peripheral?.readValue(for: characteristic)
             }
         }
     }
@@ -429,8 +406,20 @@ extension Glucose: BluetoothCharacteristicProtocol {
             self.parseGlucoseMeasurement(data: characteristic.value! as NSData)
         } else if(characteristic.uuid.uuidString == glucoseMeasurementContextCharacteristic) {
             self.parseGlucoseMeasurementContext(data: characteristic.value! as NSData)
-        } else {
-            print("Characteristic not handled: \(characteristic)")
+        } else if (characteristic.uuid.uuidString == "2A19") {
+            batteryProfileSupported = true
+        } else if (characteristic.uuid.uuidString == "2A29") {
+            self.manufacturerName = String(data: characteristic.value!, encoding: .utf8)
+            print("manufacturerName: \(self.manufacturerName)")
+        } else if (characteristic.uuid.uuidString == "2A24") {
+            self.modelNumber = String(data: characteristic.value!, encoding: .utf8)
+            print("modelNumber: \(self.modelNumber)")
+        } else if (characteristic.uuid.uuidString == "2A25") {
+            self.serialNumber = String(data: characteristic.value!, encoding: .utf8)
+            print("serialNumber: \(self.serialNumber)")
+        } else if (characteristic.uuid.uuidString == "2A26") {
+            self.firmwareVersion = String(data: characteristic.value!, encoding: .utf8)
+            print("firmwareVersion: \(self.firmwareVersion)")
         }
     }
     

@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'CCGlucose'
-  s.version          = '0.3.0'
+  s.version          = '0.3.1'
   s.summary          = 'Support for the Bluetooth Glucose Profile'
 
 # This description is used to generate tags and improve search results.
@@ -20,6 +20,8 @@ Pod::Spec.new do |s|
   s.description      = <<-DESC
 
 Changelog
+
+0.3.1: fix for null values when reading characteristics
 
 0.3.0: glucoseMeterDidTransferMeasurements callback when transfer is complete
 

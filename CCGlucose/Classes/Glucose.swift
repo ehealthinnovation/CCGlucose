@@ -193,8 +193,8 @@ public class Glucose : NSObject {
     
     func parseGlucoseMeasurement(data:NSData) {
         // ensure the first byte is not zero before parsing the data
-        var values = [UInt8](repeating:0, count: data.length)
-        data.getBytes(&values, length: data.length)
+        var values = [UInt8](repeating:0, count: 1)
+        data.getBytes(&values, length: 1)
         
         if (values[0] != 0) {
             let glucoseMeasurement = GlucoseMeasurement(data: data)

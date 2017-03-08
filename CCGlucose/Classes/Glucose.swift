@@ -192,8 +192,14 @@ public class Glucose : NSObject {
     }
     
     func parseGlucoseMeasurement(data:NSData) {
-        let glucoseMeasurement = GlucoseMeasurement(data: data)
-        glucoseDelegate?.glucoseMeasurement(measurement: glucoseMeasurement)
+        // ensure the first byte is not zero before parsing the data
+        var values = [UInt8](repeating:0, count: data.length)
+        data.getBytes(&values, length: data.length)
+        
+        if (values[0] != 0) {
+            let glucoseMeasurement = GlucoseMeasurement(data: data)
+            glucoseDelegate?.glucoseMeasurement(measurement: glucoseMeasurement)
+        }
     }
     
     func parseGlucoseMeasurementContext(data:NSData) {

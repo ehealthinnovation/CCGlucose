@@ -193,9 +193,9 @@ public class GlucoseMeasurement : NSObject {
         self.timeFaultHasOccurred = false
         
         super.init()
+        parseDateTime()
         
         if (timeOffsetPresent) {
-            parseDateTime()
             parseTimeOffset()
             applyTimeOffset()
         }

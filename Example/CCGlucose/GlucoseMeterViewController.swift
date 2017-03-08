@@ -84,7 +84,7 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         print("GlucoseMeterViewController#glucoseMeterDidTransferMeasurements")
         
         if (nil != error) {
-            print(error?.localizedDescription)
+            print(error as Any)
         } else {
             print("transfer successful")
         }

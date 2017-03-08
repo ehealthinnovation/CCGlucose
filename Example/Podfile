@@ -5,8 +5,8 @@ use_frameworks!
 
 target 'CCGlucose_Example' do
   pod 'CCGlucose', :path => '../'
-  pod 'CCBluetooth'
-  pod 'CCToolbox'
+  pod 'CCBluetooth', :git => 'https://github.com/uhnmdi/CCBluetooth.git'
+  pod 'CCToolbox', :git => 'https://github.com/uhnmdi/CCToolbox.git'
 
   target 'CCGlucose_Tests' do
     inherit! :search_paths

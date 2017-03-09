@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'CCGlucose'
-  s.version          = '0.3.1'
+  s.version          = '0.3.2'
   s.summary          = 'Support for the Bluetooth Glucose Profile'
 
 # This description is used to generate tags and improve search results.
@@ -20,6 +20,8 @@ Pod::Spec.new do |s|
   s.description      = <<-DESC
 
 Changelog
+
+0.3.2: dateTime was not being parsed if timeOffSet bit was set to zero
 
 0.3.1: fix for null values when reading characteristics
 

@@ -257,7 +257,7 @@ public class GlucoseMeasurement : NSObject {
         print("dateComponents: \(dateComponents)")
         
         let measurementDate = calendar.date(from: dateComponents as DateComponents)
-        print("measurementDate: \(measurementDate)")
+        print("measurementDate: \(String(describing: measurementDate))")
         self.dateTime = measurementDate
     }
     
@@ -277,7 +277,7 @@ public class GlucoseMeasurement : NSObject {
         let offsetDateComponents = NSDateComponents()
         offsetDateComponents.minute = Int(self.timeOffset)
         let offsetDate = calendar.date(byAdding: offsetDateComponents as DateComponents, to: self.dateTime!)
-        print("offsetDate: \(offsetDate)")
+        print("offsetDate: \(String(describing: offsetDate))")
         
         self.dateTime = offsetDate
     }
@@ -300,14 +300,14 @@ public class GlucoseMeasurement : NSObject {
         let location = sampleLocationAndDataTypeData.highNibbleAtPosition()
         
         self.sampleType = SampleType(rawValue: type)
-        print("type: \(self.sampleType?.description)")
+        print("type: \(String(describing: self.sampleType?.description))")
         
         if(location > 4) {
             print("sample location is reserved for future use")
             self.sampleLocation = .reserved
         } else {
             self.sampleLocation = SampleLocation(rawValue: location)
-            print("sample location: \(self.sampleLocation?.description)")
+            print("sample location: \(String(describing: self.sampleLocation?.description))")
         }
         
         indexCounter += 1

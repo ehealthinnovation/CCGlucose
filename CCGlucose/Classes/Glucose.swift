@@ -286,7 +286,7 @@ public class Glucose : NSObject {
         let commandPrefix = "010201"
         var recordNumberInt = recordNumber
         let recordNumberData = NSData(bytes: &recordNumberInt, length: MemoryLayout<UInt16>.size)
-        var recordNumberHex = String(recordNumberData.toHexString())
+        let recordNumberHex = String(recordNumberData.toHexString())
         
         let command = commandPrefix +
             (recordNumberHex?.subStringWithRange(0, to: 2))! +
@@ -403,7 +403,7 @@ extension Glucose: BluetoothServiceProtocol {
 
 extension Glucose: BluetoothCharacteristicProtocol {
     public func didUpdateValueForCharacteristic(_ cbPeripheral: CBPeripheral, characteristic: CBCharacteristic) {
-       print("Glucose#didUpdateValueForCharacteristic: \(characteristic) value:\(characteristic.value)")
+       print("Glucose#didUpdateValueForCharacteristic: \(characteristic) value:\(String(describing: characteristic.value))")
         if(characteristic.uuid.uuidString == glucoseFeatureCharacteristic) {
             self.parseFeaturesResponse(data: characteristic.value! as NSData)
         } else if(characteristic.uuid.uuidString == recordAccessControlPointCharacteristic) {
@@ -416,16 +416,16 @@ extension Glucose: BluetoothCharacteristicProtocol {
             batteryProfileSupported = true
         } else if (characteristic.uuid.uuidString == "2A29") {
             self.manufacturerName = String(data: characteristic.value!, encoding: .utf8)
-            print("manufacturerName: \(self.manufacturerName)")
+            print("manufacturerName: \(String(describing: self.manufacturerName))")
         } else if (characteristic.uuid.uuidString == "2A24") {
             self.modelNumber = String(data: characteristic.value!, encoding: .utf8)
-            print("modelNumber: \(self.modelNumber)")
+            print("modelNumber: \(String(describing: self.modelNumber))")
         } else if (characteristic.uuid.uuidString == "2A25") {
             self.serialNumber = String(data: characteristic.value!, encoding: .utf8)
-            print("serialNumber: \(self.serialNumber)")
+            print("serialNumber: \(String(describing: self.serialNumber))")
         } else if (characteristic.uuid.uuidString == "2A26") {
             self.firmwareVersion = String(data: characteristic.value!, encoding: .utf8)
-            print("firmwareVersion: \(self.firmwareVersion)")
+            print("firmwareVersion: \(String(describing: self.firmwareVersion))")
         }
     }
     

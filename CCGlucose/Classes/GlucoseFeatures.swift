@@ -25,7 +25,7 @@ public class GlucoseFeatures : NSObject {
     public var multipleBondSupported: Bool?
     
     init(data: NSData?) {
-        print("GlucoseFeatures#init - \(data)")
+        print("GlucoseFeatures#init - \(String(describing: data))")
         let swappedFeatureData = data?.swapUInt16Data()
         let featureString = swappedFeatureData?.toHexString()
         let featureBytes = Int(strtoul(featureString, nil, 16))

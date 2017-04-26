@@ -30,8 +30,8 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         meterConnected = false
         glucose = Glucose(peripheral: selectedMeter)
         glucose.glucoseDelegate = self
-        print("name: \(glucose.name)");
-        print("uuid: \(glucose.uuid)");
+        print("name: \(String(describing: glucose.name))");
+        print("uuid: \(String(describing: glucose.uuid))");
     }
         
     override func didMove(toParentViewController parent: UIViewController?) {

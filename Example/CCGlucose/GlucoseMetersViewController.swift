@@ -62,7 +62,7 @@ class GlucoseMetersViewController: UITableViewController, GlucoseMeterDiscoveryP
     func glucoseMeterDiscovered(glucoseMeter:CBPeripheral) {
         print("GlucoseMeterViewControllers#glucoseMeterDiscovered")
         discoveredGlucoseMeters.append(glucoseMeter)
-        print("glucose meter: \(glucoseMeter.name)")
+        print("glucose meter: \(String(describing: glucoseMeter.name))")
         
         self.refreshTable()
     }
@@ -129,12 +129,12 @@ class GlucoseMetersViewController: UITableViewController, GlucoseMeterDiscoveryP
     }
     
     func didSelectDiscoveredGlucoseMeter(_ peripheral:CBPeripheral) {
-        print("ViewController#didSelectDiscoveredPeripheral \(peripheral.name)")
+        print("ViewController#didSelectDiscoveredPeripheral \(String(describing: peripheral.name))")
         Bluetooth.sharedInstance().connectPeripheral(peripheral)
     }
     
     func didSelectPreviouslySelectedGlucoseMeter(_ peripheral:CBPeripheral) {
-        print("ViewController#didSelectPreviouslyConnectedPeripheral \(peripheral.name)")
+        print("ViewController#didSelectPreviouslyConnectedPeripheral \(String(describing: peripheral.name))")
         Bluetooth.sharedInstance().reconnectPeripheral(peripheral.identifier.uuidString)
     }
     

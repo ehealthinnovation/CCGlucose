@@ -249,7 +249,7 @@ public class GlucoseMeasurementContext : NSObject {
         if let carbohydrateID = CarbohydrateID(rawValue:carbohydrateIDByte) {
             self.carbohydrateID = carbohydrateID
         }
-        print("carbohydrateID: \(carbohydrateID)")
+        print("carbohydrateID: \(String(describing: carbohydrateID))")
         
         indexCounter += 1
     }
@@ -258,7 +258,7 @@ public class GlucoseMeasurementContext : NSObject {
         print("parseCarbohydrateUnits")
         let carbohydrateUnitsData = data.dataRange(indexCounter, Length: 1)
         carbohydrateWeight = carbohydrateUnitsData.shortFloatToFloat()
-        print("carbohydrateWeight: \(carbohydrateWeight)")
+        print("carbohydrateWeight: \(String(describing: carbohydrateWeight))")
         
         indexCounter += 1
     }
@@ -271,7 +271,7 @@ public class GlucoseMeasurementContext : NSObject {
         if let meal = Meal(rawValue: mealByte) {
             self.meal = meal
         }
-        print("meal: \(meal)")
+        print("meal: \(String(describing: meal))")
         
         indexCounter += 1
     }

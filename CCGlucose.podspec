@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'CCGlucose'
-  s.version          = '0.3.3'
+  s.version          = '0.3.4'
   s.summary          = 'Support for the Bluetooth Glucose Profile'
 
 # This description is used to generate tags and improve search results.
@@ -21,7 +21,9 @@ Pod::Spec.new do |s|
 
 Changelog
 
-0.3.3 fixed build warnings
+0.3.4: using CCGlucose as a singleton
+
+0.3.3: fixed build warnings
 
 0.3.2: dateTime was not being parsed if timeOffSet bit was set to zero
 

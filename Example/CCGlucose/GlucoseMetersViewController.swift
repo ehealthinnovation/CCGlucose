@@ -13,7 +13,6 @@ import CCGlucose
 import CoreBluetooth
 
 class GlucoseMetersViewController: UITableViewController, GlucoseMeterDiscoveryProtocol {
-    private var glucose : Glucose!
     let cellIdentifier = "GlucoseMetersCellIdentifier"
     var discoveredGlucoseMeters: Array<CBPeripheral> = Array<CBPeripheral>()
     var previouslySelectedGlucoseMeters: Array<CBPeripheral> = Array<CBPeripheral>()
@@ -28,8 +27,7 @@ class GlucoseMetersViewController: UITableViewController, GlucoseMeterDiscoveryP
         refreshControl?.attributedTitle = NSAttributedString(string: "Pull to refresh")
         refreshControl?.addTarget(self, action: #selector(onRefresh), for: .valueChanged)
         
-        glucose = Glucose()
-        glucose.glucoseMeterDiscoveryDelegate = self
+        Glucose.sharedInstance().glucoseMeterDiscoveryDelegate = self
     }
     
     func onRefresh() {
@@ -38,9 +36,8 @@ class GlucoseMetersViewController: UITableViewController, GlucoseMeterDiscoveryP
 
         self.refreshTable()
         
-        glucose = Glucose()
-        glucose.glucoseMeterDiscoveryDelegate = self
-        glucose.scanForGlucoseMeters()
+        Glucose.sharedInstance().glucoseMeterDiscoveryDelegate = self
+        Glucose.sharedInstance().scanForGlucoseMeters()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -110,7 +107,6 @@ class GlucoseMetersViewController: UITableViewController, GlucoseMeterDiscoveryP
     
     //MARK: table delegate methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        print("didSelectRowAtIndexPath")
         tableView.deselectRow(at: indexPath, animated: true)
         
         if (indexPath.section == 0) {

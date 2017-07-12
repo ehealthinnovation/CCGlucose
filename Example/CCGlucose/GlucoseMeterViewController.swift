@@ -12,7 +12,6 @@ import CoreBluetooth
 import CCGlucose
 
 class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
-    private var glucose : Glucose!
     let cellIdentifier = "GlucoseMeterCellIdentifier"
     var glucoseFeatures: GlucoseFeatures!
     var glucoseMeasurementCount: UInt16 = 0
@@ -28,17 +27,14 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         print("GlucoseMeterViewController#viewDidLoad")
         print("selectedMeter: \(selectedMeter)")
         meterConnected = false
-        glucose = Glucose(peripheral: selectedMeter)
-        glucose.glucoseDelegate = self
-        print("name: \(String(describing: glucose.name))");
-        print("uuid: \(String(describing: glucose.uuid))");
+        Glucose.sharedInstance().glucoseDelegate = self
     }
         
     override func didMove(toParentViewController parent: UIViewController?) {
         super.didMove(toParentViewController: parent)
         
         if(meterConnected == true) {
-           glucose.disconnectGlucoseMeter()
+           Glucose.sharedInstance().disconnectGlucoseMeter()
         }
     }
     
@@ -58,7 +54,7 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         glucoseMeasurementCount = number
         self.refreshTable()
         
-        glucose.downloadAllRecords()
+        Glucose.sharedInstance().downloadAllRecords()
     }
     
     func glucoseMeasurement(measurement:GlucoseMeasurement) {
@@ -214,8 +210,6 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
 
     //MARK: - table delegate methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        print("didSelectRowAtIndexPath")
-        
         tableView.deselectRow(at: indexPath, animated: true)
         
         if(indexPath.section == 2) {

@@ -155,10 +155,8 @@ class GlucoseMeasurementDetailsViewController: UITableViewController {
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         if(glucoseMeasurementContext != nil) {
-            //print("returning 3")
             return 3
         } else {
-            //print("returning 2")
             return 2
         }
     }

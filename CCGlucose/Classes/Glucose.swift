@@ -11,6 +11,8 @@ import CoreBluetooth
 import CCBluetooth
 import CCToolbox
 
+var thisGlucose : Glucose?
+
 @objc public enum transferError : Int {
     case reserved = 0,
     success,
@@ -93,6 +95,13 @@ public class Glucose : NSObject {
     public internal(set) var modelNumber : String?
     public internal(set) var serialNumber : String?
     public internal(set) var firmwareVersion : String?
+    
+    public class func sharedInstance() -> Glucose {
+        if thisGlucose == nil {
+            thisGlucose = Glucose()
+        }
+        return thisGlucose!
+    }
     
     public override init() {
         super.init()

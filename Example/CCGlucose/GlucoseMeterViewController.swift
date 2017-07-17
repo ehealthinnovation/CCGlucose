@@ -16,7 +16,6 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
     var glucoseFeatures: GlucoseFeatures!
     var glucoseMeasurementCount: UInt16 = 0
     var glucoseMeasurements: Array<GlucoseMeasurement> = Array<GlucoseMeasurement>()
-    var glucoseMeasurementContexts: Array<GlucoseMeasurementContext> = Array<GlucoseMeasurementContext>()
     var selectedGlucoseMeasurement: GlucoseMeasurement!
     var selectedGlucoseMeasurementContext: GlucoseMeasurementContext!
     var selectedMeter: CBPeripheral!
@@ -36,6 +35,16 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         if(meterConnected == true) {
            Glucose.sharedInstance().disconnectGlucoseMeter()
         }
+    }
+    
+    func getMeasurment(sequenceNumber: UInt16) -> GlucoseMeasurement? {
+        for measurement: GlucoseMeasurement in glucoseMeasurements {
+            if measurement.sequenceNumber == sequenceNumber {
+                return measurement
+            }
+        }
+        return nil
+
     }
     
     // MARK: - GlucoseProtocol
@@ -65,8 +74,10 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
     }
     
     func glucoseMeasurementContext(measurementContext:GlucoseMeasurementContext) {
-        print("glucoseMeasurementContext")
-        glucoseMeasurementContexts.append(measurementContext)
+        print("glucoseMeasurementContext - id: \(measurementContext.sequenceNumber)")
+        if let measurement = getMeasurment(sequenceNumber: measurementContext.sequenceNumber) {
+            measurement.context = measurementContext
+        }
     }
     
     func glucoseFeatures(features:GlucoseFeatures) {
@@ -95,8 +106,6 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         let detailsViewController =  segue.destination as! GlucoseMeasurementDetailsViewController
         detailsViewController.glucoseMeasurement = selectedGlucoseMeasurement
-        selectedGlucoseMeasurementContext = getContextFromArray(sequenceNumber: selectedGlucoseMeasurement.sequenceNumber)
-        detailsViewController.glucoseMeasurementContext = selectedGlucoseMeasurementContext
     }
     
     // MARK: - UITableViewDataSource
@@ -223,15 +232,5 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         DispatchQueue.main.async(execute: {
             self.tableView.reloadData()
         })
-    }
-    
-    func getContextFromArray(sequenceNumber:UInt16) -> GlucoseMeasurementContext? {
-        for context: GlucoseMeasurementContext in glucoseMeasurementContexts {
-            if(context.sequenceNumber == sequenceNumber) {
-                return context
-            }
-        }
-    
-        return nil
     }
 }

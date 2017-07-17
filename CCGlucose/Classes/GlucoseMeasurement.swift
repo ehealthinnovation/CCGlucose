@@ -86,6 +86,7 @@ public class GlucoseMeasurement : NSObject {
     public var unit : GlucoseConcentrationUnits
     public var sampleType: SampleType?
     public var sampleLocation: SampleLocation?
+    public var context: GlucoseMeasurementContext?
     
     //flags
     var timeOffsetPresent: Bool

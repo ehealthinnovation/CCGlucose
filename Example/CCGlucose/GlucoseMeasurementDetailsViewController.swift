@@ -13,13 +13,11 @@ import CCGlucose
 class GlucoseMeasurementDetailsViewController: UITableViewController {
     let cellIdentifier = "DetailsCellIdentifier"
     var glucoseMeasurement: GlucoseMeasurement!
-    var glucoseMeasurementContext: GlucoseMeasurementContext!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         print("GlucoseMeasurementDetailsViewController#viewDidLoad")
         print("glucoseMeasurement: \(glucoseMeasurement)")
-        print("glucoseMeasurementContext: \(glucoseMeasurementContext)")
     }
     
     // MARK: Table data source methods
@@ -110,51 +108,52 @@ class GlucoseMeasurementDetailsViewController: UITableViewController {
             }
         }
         
+        if(self.glucoseMeasurement.context != nil) {
         if(indexPath.section == 2) {
             switch indexPath.row {
             case 0:
-                cell.textLabel!.text = glucoseMeasurementContext.sequenceNumber.description
+                cell.textLabel!.text = self.glucoseMeasurement.context?.sequenceNumber.description
                 cell.detailTextLabel!.text = "Sequence number"
             case 1:
-                cell.textLabel!.text = glucoseMeasurementContext.carbohydrateID?.description
+                cell.textLabel!.text = self.glucoseMeasurement.context?.carbohydrateID?.description
                 cell.detailTextLabel!.text = "Carbohydrate"
             case 2:
-                cell.textLabel!.text = glucoseMeasurementContext.carbohydrateWeight?.description
+                cell.textLabel!.text = self.glucoseMeasurement.context?.carbohydrateWeight?.description
                 cell.detailTextLabel!.text = "Carbohydrate weight"
             case 3:
-                cell.textLabel!.text = glucoseMeasurementContext.meal?.description
+                cell.textLabel!.text = self.glucoseMeasurement.context?.meal?.description
                 cell.detailTextLabel!.text = "Meal"
             case 4:
-                cell.textLabel!.text = glucoseMeasurementContext.tester
+                cell.textLabel!.text = self.glucoseMeasurement.context?.tester
                 cell.detailTextLabel!.text = "Tester"
             case 5:
-                cell.textLabel!.text = glucoseMeasurementContext.health
+                cell.textLabel!.text = self.glucoseMeasurement.context?.health
                 cell.detailTextLabel!.text = "Health"
             case 6:
-                cell.textLabel!.text = glucoseMeasurementContext.exerciseDuration?.description
+                cell.textLabel!.text = self.glucoseMeasurement.context?.exerciseDuration?.description
                 cell.detailTextLabel!.text = "Exercise duration"
             case 7:
-                cell.textLabel!.text = glucoseMeasurementContext.exerciseIntensity?.description
+                cell.textLabel!.text = self.glucoseMeasurement.context?.exerciseIntensity?.description
                 cell.detailTextLabel!.text = "Exercise intensity"
             case 8:
-                cell.textLabel!.text = glucoseMeasurementContext.medicationID
+                cell.textLabel!.text = self.glucoseMeasurement.context?.medicationID
                 cell.detailTextLabel!.text = "Medication ID"
             case 9:
-                cell.textLabel!.text = glucoseMeasurementContext.medication?.description
+                cell.textLabel!.text = self.glucoseMeasurement.context?.medication?.description
                 cell.detailTextLabel!.text = "Medication"
             case 10:
-                cell.textLabel!.text = glucoseMeasurementContext.hbA1c?.description
+                cell.textLabel!.text = self.glucoseMeasurement.context?.hbA1c?.description
                 cell.detailTextLabel!.text = "hbA1c"
             default :
                 cell.textLabel!.text = ""
             }
         }
-        
+        }
         return cell
     }
 
     override func numberOfSections(in tableView: UITableView) -> Int {
-        if(glucoseMeasurementContext != nil) {
+        if(self.glucoseMeasurement.context != nil) {
             return 3
         } else {
             return 2
@@ -168,7 +167,7 @@ class GlucoseMeasurementDetailsViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
         case 0:
-            if(glucoseMeasurementContext != nil) {
+            if(self.glucoseMeasurement.context != nil) {
                 return "Glucose Measurement"
             } else {
                 return "Glucose Measurement  (No context)"

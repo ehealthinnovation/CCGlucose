@@ -95,6 +95,8 @@ public class Glucose : NSObject {
     public internal(set) var modelNumber : String?
     public internal(set) var serialNumber : String?
     public internal(set) var firmwareVersion : String?
+    public internal(set) var softwareVersion : String?
+    public internal(set) var hardwareVersion : String?
     
     public class func sharedInstance() -> Glucose {
         if thisGlucose == nil {
@@ -435,6 +437,14 @@ extension Glucose: BluetoothCharacteristicProtocol {
         } else if (characteristic.uuid.uuidString == "2A26") {
             self.firmwareVersion = String(data: characteristic.value!, encoding: .utf8)
             print("firmwareVersion: \(String(describing: self.firmwareVersion))")
+        }
+        if (characteristic.uuid.uuidString == "2A27") {
+            self.hardwareVersion = String(data: characteristic.value!, encoding: .utf8)
+            print("hardwareVersion: \(String(describing: self.hardwareVersion))")
+        }
+        if (characteristic.uuid.uuidString == "2A28") {
+            self.softwareVersion = String(data: characteristic.value!, encoding: .utf8)
+            print("softwareVersion: \(String(describing: self.softwareVersion))")
         }
     }
     

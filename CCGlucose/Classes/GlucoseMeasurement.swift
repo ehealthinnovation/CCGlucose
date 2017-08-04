@@ -7,6 +7,8 @@
 //
 
 import Foundation
+import CCBluetooth
+import CCToolbox
 
 // note: enums that are exported to objc cannot be nicely printed, so we have to add a description
 
@@ -58,7 +60,6 @@ import Foundation
         case .notAvailable: return "Not Available"
         }
     }
-    
 }
 
 @objc public enum GlucoseConcentrationUnits : Int, CustomStringConvertible {
@@ -71,28 +72,26 @@ import Foundation
         case .molL: return NSLocalizedString("mol/L", comment: "concentration unit")
         }
     }
-
 }
 
 public class GlucoseMeasurement : NSObject {
-    //raw data
-    let data: NSData
-    var indexCounter: Int = 0
-    
-    public var sequenceNumber: UInt16
+    public var packetData: NSData!
+    public var sequenceNumber: UInt16!
     public var dateTime: Date?
-    public var timeOffset: Int16
-    public var glucoseConcentration: Float
-    public var unit : GlucoseConcentrationUnits
+    public var timeOffset: Int16!
+    public var glucoseConcentration: Float!
+    public var unit : String!
     public var sampleType: SampleType?
     public var sampleLocation: SampleLocation?
     public var context: GlucoseMeasurementContext?
+    var bluetoothDateTime: BluetoothDateTime!
     
-    //flags
-    var timeOffsetPresent: Bool
-    var glucoseConcentrationTypeAndSampleLocationPresent: Bool
-    var sensorStatusAnnunciationPresent: Bool
-    public var contextInformationFollows: Bool
+    let flagsRange = NSRange(location:0, length: 1)
+    let sequenceNumberRange = NSRange(location:1, length: 2)
+    let dateTimeRange = NSRange(location:3, length: 7)
+    
+    //publicly accessible flag
+    public var contextInformationFollows: Bool!
     
     // the following methods have been added to allow access optional types (e.g. Int, Float, Bool)
     // that have no equivalent in objective-c. They can be removed once we no longer require objective-c compatibility
@@ -112,164 +111,132 @@ public class GlucoseMeasurement : NSObject {
     }
     
     //Sensor Status Annunciations
-    public var deviceBatteryLowAtTimeOfMeasurement: Bool
-    public var sensorMalfunctionOrFaultingAtTimeOfMeasurement: Bool
-    public var sampleSizeForBloodOrControlSolutionInsufficientAtTimeOfMeasurement: Bool
-    public var stripInsertionError: Bool
-    public var stripTypeIncorrectForDevice: Bool
-    public var sensorResultHigherThanTheDeviceCanProcess: Bool
-    public var sensorResultLowerThanTheDeviceCanProcess: Bool
-    public var sensorTemperatureTooHighForValidTest: Bool
-    public var sensorTemperatureTooLowForValidTest: Bool
-    public var sensorReadInterruptedBecauseStripWasPulledTooSoon: Bool
-    public var generalDeviceFault: Bool
-    public var timeFaultHasOccurred: Bool
+    public var deviceBatteryLowAtTimeOfMeasurement: Bool!
+    public var sensorMalfunctionOrFaultingAtTimeOfMeasurement: Bool!
+    public var sampleSizeForBloodOrControlSolutionInsufficientAtTimeOfMeasurement: Bool!
+    public var stripInsertionError: Bool!
+    public var stripTypeIncorrectForDevice: Bool!
+    public var sensorResultHigherThanTheDeviceCanProcess: Bool!
+    public var sensorResultLowerThanTheDeviceCanProcess: Bool!
+    public var sensorTemperatureTooHighForValidTest: Bool!
+    public var sensorTemperatureTooLowForValidTest: Bool!
+    public var sensorReadInterruptedBecauseStripWasPulledTooSoon: Bool!
+    public var generalDeviceFault: Bool!
+    public var timeFaultHasOccurred: Bool!
 
-    class func parseSequenceNumber(data: NSData) -> UInt16 {
-        let index = 1
-        let sequenceNumberData = data.dataRange(index, Length: 2)
-        let swappedSequenceNumberData = sequenceNumberData.swapUInt16Data()
-        let swappedSequenceNumberString = swappedSequenceNumberData.toHexString()
-        let sequenceNumber = UInt16(strtoul(swappedSequenceNumberString, nil, 16))
+    enum indexOffsets: Int {
+        case flags = 0,
+        sequenceNumber = 1,
+        dateTime = 3,
+        timeOffset = 10,
+        glucoseConcentration = 12,
+        typeLocation = 14,
+        annunciation
+    }
+    
+    struct Flag {
+        var position: Int?
+        var value: Int?
+        var dataLength: Int?
+    }
+    var flags: [Flag] = []
+    
+    enum FlagBytes: Int {
+        case timeOffsetPresent, glucoseConcentrationTypeAndSampleLocationPresent, glucoseConcentrationUnits, sensorStatusAnnunciationPresent, contextInformationFollows, count
+    }
+    
+    func parseFlags() {
+        let flagsData = packetData.subdata(with: flagsRange) as NSData!
+        let flagsString = flagsData?.toHexString()
+        let flagsByte = Int(strtoul(flagsString, nil, 16))
+        print("flags byte: \(flagsByte)")
+        
+        self.flags.append(Flag(position: FlagBytes.timeOffsetPresent.rawValue, value: flagsByte.bit(0), dataLength: 2))
+        self.flags.append(Flag(position: FlagBytes.glucoseConcentrationTypeAndSampleLocationPresent.rawValue, value: flagsByte.bit(1), dataLength: 3))
+        self.flags.append(Flag(position: FlagBytes.sensorStatusAnnunciationPresent.rawValue, value: flagsByte.bit(3), dataLength: 1))
+        self.flags.append(Flag(position: FlagBytes.contextInformationFollows.rawValue, value: flagsByte.bit(4), dataLength: 1))
+        
+        self.unit = (GlucoseConcentrationUnits(rawValue: flagsByte.bit(2))?.description)!
+        self.contextInformationFollows = flagsByte.bit(4).toBool()!
+    }
+    
+    func getOffset(max: Int) -> Int {
+        //first 10 bytes are mandatory
+        var offset: Int = 9
+        
+        for flag in flags {
+            offset += flag.dataLength!
+        }
+        
+        if offset >= max {
+            return max
+        }
+        
+        return offset
+    }
+    
+    func flagPresent(flagByte: Int) -> Int {
+        for flag in flags {
+            if flag.position == flagByte {
+                return flag.value!
+            }
+        }
+        
+        return 0
+    }
+    
+    func parseSequenceNumber() -> UInt16 {
+        let sequenceNumberData: NSData! = packetData.subdata(with: sequenceNumberRange) as NSData!
+        let swappedSequenceNumberData = sequenceNumberData.swapUInt16Data().toHexString()
+        let sequenceNumber = UInt16(strtoul(swappedSequenceNumberData, nil, 16))
         print("sequenceNumber: \(sequenceNumber)")
+        
         return sequenceNumber
     }
     
-    class func extractFlags(data: NSData) -> Int {
-        let index = 0
-        let flagsData = data.dataRange(index, Length: 1)
-        let flagsString = flagsData.toHexString()
-        let flagsByte = Int(strtoul(flagsString, nil, 16))
-        print("flags byte: \(flagsByte)")
-        return flagsByte
+    func parseDateTime() -> Date {
+        let dateTimeData = packetData.subdata(with: dateTimeRange) as NSData!
+        print("parseDateTime: \(String(describing: dateTimeData))")
+        let dateTimeResult = bluetoothDateTime.dateFromData(data: dateTimeData!)
+        print("measurement date: \(String(describing: dateTimeResult))")
+        
+        return dateTimeResult
     }
     
-    class func extractBit(bit: Int, byte: Int) -> Bool {
-        if let value = byte.bit(bit).toBool() {
-            return value
-        }
-        print("Unable to parse byte: \(byte)")
-        return false
-    }
-
-    class func parseUnits(byte: Int) -> GlucoseConcentrationUnits {
-        let raw = byte.bit(2)
-        if let unit = GlucoseConcentrationUnits(rawValue: raw) {
-            return unit
-        }
-        print("Unable to parse unit: \(raw)")
-        return .kgL
-    }
-    
-    public init(data: NSData) {
-        print("GlucoseMeasurement#init - \(data)")
-        self.data = data
-        self.unit = .kgL
-
-        let flags = GlucoseMeasurement.extractFlags(data: data)
-        self.timeOffsetPresent = GlucoseMeasurement.extractBit(bit: 0, byte: flags)
-        self.glucoseConcentrationTypeAndSampleLocationPresent = GlucoseMeasurement.extractBit(bit: 1, byte: flags)
-        self.unit = GlucoseMeasurement.parseUnits(byte: flags)
-        self.sensorStatusAnnunciationPresent = GlucoseMeasurement.extractBit(bit: 3, byte: flags)
-        self.contextInformationFollows = GlucoseMeasurement.extractBit(bit: 4, byte: flags)
-        
-        self.sequenceNumber = GlucoseMeasurement.parseSequenceNumber(data: data)
-        self.timeOffset = 0
-        
-        indexCounter = 3; // skip flags (1) sequence number (2)
-        
-        self.glucoseConcentration = 0
-        
-        self.deviceBatteryLowAtTimeOfMeasurement = false
-        self.sensorMalfunctionOrFaultingAtTimeOfMeasurement = false;
-        self.sampleSizeForBloodOrControlSolutionInsufficientAtTimeOfMeasurement = false
-        self.stripInsertionError = false
-        self.stripTypeIncorrectForDevice = false
-        self.sensorResultHigherThanTheDeviceCanProcess = false
-        self.sensorResultLowerThanTheDeviceCanProcess = false
-        self.sensorTemperatureTooLowForValidTest = false
-        self.sensorTemperatureTooHighForValidTest = false
-        self.sensorReadInterruptedBecauseStripWasPulledTooSoon = false
-        self.generalDeviceFault = false
-        self.timeFaultHasOccurred = false
-        
+    public init(data: NSData?) {
         super.init()
-        parseDateTime()
+        print("GlucoseMeasurement#init - \(String(describing: data))")
+        self.packetData = data
         
-        if (timeOffsetPresent) {
-            parseTimeOffset()
+        self.bluetoothDateTime = BluetoothDateTime()
+        
+        parseFlags()
+        self.sequenceNumber = parseSequenceNumber()
+        self.dateTime = parseDateTime()
+        if self.flagPresent(flagByte: FlagBytes.timeOffsetPresent.rawValue).toBool()! {
+            self.timeOffset = parseTimeOffset()
             applyTimeOffset()
         }
         
-        if (glucoseConcentrationTypeAndSampleLocationPresent) {
-            parseGlucoseConcentration()
+        if self.flagPresent(flagByte: FlagBytes.glucoseConcentrationTypeAndSampleLocationPresent.rawValue).toBool()! {
+            glucoseConcentration = parseGlucoseConcentration()
             parseSampleLocationAndType()
         }
-        if (sensorStatusAnnunciationPresent) {
+        
+        if self.flagPresent(flagByte: FlagBytes.sensorStatusAnnunciationPresent.rawValue).toBool()! {
             parseSensorStatusAnnunciation()
         }
     }
     
-    func parseDateTime() {
-        print("parseDateTime [indexCounter:\(indexCounter)]")
+    func parseTimeOffset() -> Int16 {
+        let offset: Int = getOffset(max: indexOffsets.timeOffset.rawValue)
+        print("parseTimeOffset - offset: \(offset)")
         
-        let calendar = Calendar(identifier: Calendar.Identifier.gregorian)
-        let dateComponents = NSDateComponents()
+        let timeBytes = packetData.subdata(with: NSRange(location:offset, length: 2)) as NSData!
+        let timeOffset: Int16 = timeBytes!.readInteger(0);
+        print("timeOffset (minutes): \(timeOffset)")
         
-        let yearData = data.dataRange(indexCounter, Length: 2)
-        print("yearData: \(yearData)")
-        let swappedYearData = yearData.swapUInt16Data()
-        print("swappedYearData: \(swappedYearData)")
-        
-        let swappedYearString = swappedYearData.toHexString()
-        dateComponents.year = Int(strtoul(swappedYearString, nil, 16))
-        indexCounter += 2
-        
-        // Month
-        let monthData = data.dataRange(indexCounter, Length: 1)
-        print("monthData: \(monthData)")
-        dateComponents.month = Int(strtoul(monthData.toHexString(), nil, 16))
-        indexCounter += 1
-        
-        // Day
-        let dayData = data.dataRange(indexCounter, Length: 1)
-        print("dayData: \(dayData)")
-        dateComponents.day = Int(strtoul(dayData.toHexString(), nil, 16))
-        indexCounter += 1
-        
-        // Hours
-        let hoursData = data.dataRange(indexCounter, Length: 1)
-        print("hoursData: \(hoursData)")
-        dateComponents.hour = Int(strtoul(hoursData.toHexString(), nil, 16))
-        indexCounter += 1
-        
-        // Minutes
-        let minutesData = data.dataRange(indexCounter, Length: 1)
-        print("minutesData: \(minutesData)")
-        dateComponents.minute = Int(strtoul(minutesData.toHexString(), nil, 16))
-        indexCounter += 1
-        
-        // Seconds
-        let secondsData = data.dataRange(indexCounter, Length: 1)
-        print("secondsData: \(secondsData)")
-        dateComponents.second = Int(strtoul(secondsData.toHexString(), nil, 16))
-        indexCounter += 1
-        
-        print("dateComponents: \(dateComponents)")
-        
-        let measurementDate = calendar.date(from: dateComponents as DateComponents)
-        print("measurementDate: \(String(describing: measurementDate))")
-        self.dateTime = measurementDate
-    }
-    
-    func parseTimeOffset() {
-        print("parseTimeOffset [indexCounter:\(indexCounter)]")
-        let timeBytes = data.dataRange(indexCounter, Length: 2)
-        let timeOffset: Int16 = timeBytes.readInteger(0);
-        print("timeOffset(minutes): \(timeOffset)")
-        self.timeOffset = timeOffset
-        
-        indexCounter += 2
+        return timeOffset
     }
     
     func applyTimeOffset() {
@@ -283,41 +250,45 @@ public class GlucoseMeasurement : NSObject {
         self.dateTime = offsetDate
     }
     
-    func parseGlucoseConcentration() {
-        print("parseGlucoseConcentration [indexCounter:\(indexCounter)]")
-        let concentrationData = data.dataRange(indexCounter, Length: 2)
-        print("concentrationData: \(concentrationData)")
-        glucoseConcentration = concentrationData.shortFloatToFloat()
-        print("glucoseConcentration: \(glucoseConcentration)")
+    func parseGlucoseConcentration() -> Float{
+        let offset: Int = getOffset(max: indexOffsets.glucoseConcentration.rawValue)
+        print("parseGlucoseConcentration - offset: \(offset)")
         
-        indexCounter += 2
+        let concentrationData = packetData.subdata(with: NSRange(location:offset, length: 2)) as NSData!
+        print("glucoseConcentration: \(String(describing: concentrationData?.shortFloatToFloat()))")
+        
+        return concentrationData!.shortFloatToFloat()
     }
     
     func parseSampleLocationAndType() {
-        print("parseSampleLocationAndType [indexCounter:\(indexCounter)]")
-        let sampleLocationAndDataTypeData = data.dataRange(indexCounter, Length: 1)
-        print("sampleLocationAndDataTypeData: \(sampleLocationAndDataTypeData)")
-        let type = sampleLocationAndDataTypeData.lowNibbleAtPosition()
-        let location = sampleLocationAndDataTypeData.highNibbleAtPosition()
+        let offset: Int = getOffset(max: indexOffsets.typeLocation.rawValue)
+        print("parseSampleLocationAndType - offset: \(offset)")
         
-        self.sampleType = SampleType(rawValue: type)
-        print("type: \(String(describing: self.sampleType?.description))")
+        let sampleLocationAndDataTypeData = packetData.subdata(with: NSRange(location:offset, length: 1)) as NSData!
+        print("sampleLocationAndDataTypeData: \(String(describing: sampleLocationAndDataTypeData))")
         
-        if(location > 4) {
+        let type = sampleLocationAndDataTypeData?.lowNibbleAtPosition()
+        let location = sampleLocationAndDataTypeData?.highNibbleAtPosition()
+        
+        self.sampleType = SampleType(rawValue: type!)
+        print("type: \(String(describing: self.sampleType!.description))")
+        
+        if(location! > 4) {
             print("sample location is reserved for future use")
             self.sampleLocation = .reserved
         } else {
-            self.sampleLocation = SampleLocation(rawValue: location)
+            self.sampleLocation = SampleLocation(rawValue: location!)
             print("sample location: \(String(describing: self.sampleLocation?.description))")
         }
-        
-        indexCounter += 1
     }
     
     func parseSensorStatusAnnunciation() {
-        print("parseSensorStatusAnnunciation [indexCounter:\(indexCounter)]")
-        let sensorStatusAnnunciationData = data.dataRange(indexCounter, Length: 2).swapUInt16Data()
-        let sensorStatusAnnunciationString = sensorStatusAnnunciationData.toHexString()
+        let offset: Int = getOffset(max: indexOffsets.annunciation.rawValue)
+        print("parseSensorStatusAnnunciation - offset: \(offset)")
+        
+        let sensorStatusAnnunciationData = packetData.subdata(with: NSRange(location:offset, length: 2)) as NSData!
+        
+        let sensorStatusAnnunciationString = sensorStatusAnnunciationData?.toHexString()
         let sensorStatusAnnunciationBytes = Int(strtoul(sensorStatusAnnunciationString, nil, 16))
         print("sensorStatusAnnunciation bytes: \(sensorStatusAnnunciationBytes)")
         

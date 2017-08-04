@@ -16,6 +16,7 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
     var glucoseFeatures: GlucoseFeatures!
     var glucoseMeasurementCount: UInt16 = 0
     var glucoseMeasurements: Array<GlucoseMeasurement> = Array<GlucoseMeasurement>()
+    var glucoseMeasurementsContexts: Array<GlucoseMeasurementContext> = Array<GlucoseMeasurementContext>()
     var selectedGlucoseMeasurement: GlucoseMeasurement!
     var selectedGlucoseMeasurementContext: GlucoseMeasurementContext!
     var selectedMeter: CBPeripheral!
@@ -37,14 +38,24 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         }
     }
     
-    func getMeasurment(sequenceNumber: UInt16) -> GlucoseMeasurement? {
+    func getMeasurement(sequenceNumber: UInt16) -> GlucoseMeasurement? {
         for measurement: GlucoseMeasurement in glucoseMeasurements {
             if measurement.sequenceNumber == sequenceNumber {
                 return measurement
             }
         }
+        
         return nil
-
+    }
+    
+    func getMeasurementContext(sequenceNumber: UInt16) -> GlucoseMeasurementContext? {
+        for measurementContext: GlucoseMeasurementContext in glucoseMeasurementsContexts {
+            if measurementContext.sequenceNumber == sequenceNumber {
+                return measurementContext
+            }
+        }
+        
+        return nil
     }
     
     // MARK: - GlucoseProtocol
@@ -68,16 +79,26 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
     
     func glucoseMeasurement(measurement:GlucoseMeasurement) {
         print("glucoseMeasurement")
-        glucoseMeasurements.append(measurement)
         
+        if let measurementContext = getMeasurementContext(sequenceNumber: measurement.sequenceNumber) {
+            print("glucoseMeasurement: attaching context to measurement")
+            measurement.context = measurementContext
+        }
+        
+        glucoseMeasurements.append(measurement)
         self.refreshTable()
     }
     
     func glucoseMeasurementContext(measurementContext:GlucoseMeasurementContext) {
         print("glucoseMeasurementContext - id: \(measurementContext.sequenceNumber)")
-        if let measurement = getMeasurment(sequenceNumber: measurementContext.sequenceNumber) {
+        
+        if let measurement = getMeasurement(sequenceNumber: measurementContext.sequenceNumber) {
+            print("glucoseMeasurementContext: attaching context to measurement")
             measurement.context = measurementContext
         }
+        
+        glucoseMeasurementsContexts.append(measurementContext)
+        self.refreshTable()
     }
     
     func glucoseFeatures(features:GlucoseFeatures) {
@@ -185,7 +206,7 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
                 let mmolString : String = (measurement.toMMOL()?.description)!
                 let contextWillFollow : Bool = (measurement.contextInformationFollows)
                 
-                cell.textLabel!.text = "[\(contextWillFollow.description)] (\(measurement.sequenceNumber)) \(measurement.glucoseConcentration) \(measurement.unit.description) (\(mmolString) mmol/L)"
+                cell.textLabel!.text = "[\(contextWillFollow.description)] (\(measurement.sequenceNumber!)) \(measurement.glucoseConcentration!) \(measurement.unit.description) (\(mmolString) mmol/L)"
                 
                 cell.detailTextLabel!.text = measurement.dateTime?.description
             default:

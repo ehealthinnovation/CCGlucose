@@ -122,13 +122,10 @@ public enum MedicationValueUnit : Int {
     }
 }
 
-
 public class GlucoseMeasurementContext : NSObject {
-    //raw data
-    var data: NSData
-    var indexCounter: Int = 0
+    var packetData: NSData!
     
-    public var sequenceNumber: UInt16
+    public var sequenceNumber: UInt16!
     public var carbohydrateID: CarbohydrateID?
     public var carbohydrateWeight: Float?
     public var meal: Meal?
@@ -139,6 +136,9 @@ public class GlucoseMeasurementContext : NSObject {
     public var medicationID: String?
     public var medication: Float?
     public var hbA1c: Float?
+    
+    let flagsRange = NSRange(location:0, length: 1)
+    let sequenceNumberRange = NSRange(location:1, length: 2)
     
     // note: these methods are required to allow objc to access an optional enum
 
@@ -158,167 +158,217 @@ public class GlucoseMeasurementContext : NSObject {
         return self.carbohydrateID!
     }
 
-    //flags
-    var carbohydrateIDAndCarbohydratePresent: Bool
-    var mealPresent: Bool
-    var testerHealthPresent: Bool
-    var exerciseDurationAndExerciseIntensityPresent: Bool
-    var medicationIDAndMedicationPresent: Bool
-    var medicationValueUnits: String
-    var hbA1cPresent: Bool
-    var extendedFlagsPresent: Bool
+    var medicationValueUnits: String!
     
-    class func parseSequenceNumber(data: NSData) -> UInt16 {
-        let index = 1
-        print("parseSequenceNumber [indexCounter:\(index)]")
-        let sequenceNumberData = data.dataRange(index, Length: 2)
-        let swappedSequenceNumberData = sequenceNumberData.swapUInt16Data()
-        let swappedSequenceNumberString = swappedSequenceNumberData.toHexString()
-        let sequenceNumber = UInt16(strtoul(swappedSequenceNumberString, nil, 16))
+    enum indexOffsets: Int {
+        case flags = 0,
+        sequenceNumber = 1,
+        extendedFlags = 3,
+        carbohydrateID,
+        carbohydrateWeight,
+        meal = 7,
+        testerHealth,
+        exerciseDuration,
+        exerciseIntensity = 11,
+        medicationID,
+        medication,
+        HbA1c = 15
+    }
+    
+    struct Flag {
+        var position: Int?
+        var value: Int?
+        var dataLength: Int?
+    }
+    var flags: [Flag] = []
+
+    enum FlagBytes: Int {
+        case carbohydrateIDAndCarbohydratePresent, mealPresent, testerHealthPresent, exerciseDurationAndExerciseIntensityPresent, medicationIDAndMedicationPresent, hbA1cPresent, extendedFlagsPresent, count
+    }
+
+    func parseFlags() {
+        let flagsData = packetData.subdata(with: flagsRange) as NSData!
+        let flagsString = flagsData?.toHexString()
+        let flagsByte = Int(strtoul(flagsString, nil, 16))
+        print("flags byte: \(flagsByte)")
+        
+        self.flags.append(Flag(position: FlagBytes.carbohydrateIDAndCarbohydratePresent.rawValue, value: flagsByte.bit(0), dataLength: 1))
+        self.flags.append(Flag(position: FlagBytes.mealPresent.rawValue, value: flagsByte.bit(1), dataLength: 1))
+        self.flags.append(Flag(position: FlagBytes.testerHealthPresent.rawValue, value: flagsByte.bit(2), dataLength: 1))
+        self.flags.append(Flag(position: FlagBytes.exerciseDurationAndExerciseIntensityPresent.rawValue, value: flagsByte.bit(3), dataLength: 1))
+        self.flags.append(Flag(position: FlagBytes.medicationIDAndMedicationPresent.rawValue, value: flagsByte.bit(4), dataLength: 1))
+        self.flags.append(Flag(position: FlagBytes.hbA1cPresent.rawValue, value: flagsByte.bit(6), dataLength: 1))
+        self.flags.append(Flag(position: FlagBytes.extendedFlagsPresent.rawValue, value: flagsByte.bit(7), dataLength: 1))
+        
+        self.medicationValueUnits = (MedicationValueUnit(rawValue: flagsByte.bit(5))?.description)!
+    }
+    
+    func getOffset(max: Int) -> Int {
+        //first 3 bytes are mandatory
+        var offset: Int = 2
+        
+        for flag in flags {
+            if flag.value == 1 {
+                offset += flag.dataLength!
+            }
+        }
+        
+        if offset >= max {
+            return max
+        }
+        
+        return offset
+    }
+    
+    func flagPresent(flagByte: Int) -> Int {
+        for flag in flags {
+            if flag.position == flagByte {
+                return flag.value!
+            }
+        }
+        
+        return 0
+    }
+
+    func parseSequenceNumber() -> UInt16 {
+        let sequenceNumberData: NSData! = packetData.subdata(with: sequenceNumberRange) as NSData!
+        let swappedSequenceNumberData = sequenceNumberData.swapUInt16Data().toHexString()
+        let sequenceNumber = UInt16(strtoul(swappedSequenceNumberData, nil, 16))
         print("sequenceNumber: \(sequenceNumber)")
+        
         return sequenceNumber
     }
 
     init(data: NSData) {
-        self.data = data
-        
-        let flags = GlucoseMeasurement.extractFlags(data: data)
-        
-        self.carbohydrateIDAndCarbohydratePresent = GlucoseMeasurement.extractBit(bit: 0, byte: flags)
-        self.mealPresent = GlucoseMeasurement.extractBit(bit: 1, byte: flags)
-        self.testerHealthPresent = GlucoseMeasurement.extractBit(bit: 2, byte: flags)
-        self.exerciseDurationAndExerciseIntensityPresent = GlucoseMeasurement.extractBit(bit: 3, byte: flags)
-        self.medicationIDAndMedicationPresent = GlucoseMeasurement.extractBit(bit: 4, byte: flags)
-        
-        let unit = MedicationValueUnit(rawValue: flags.bit(5))!
-        self.medicationValueUnits = unit.description
-        
-        self.hbA1cPresent = GlucoseMeasurement.extractBit(bit: 6, byte: flags)
-        self.extendedFlagsPresent = GlucoseMeasurement.extractBit(bit: 7, byte: flags)
-        
-        self.sequenceNumber = GlucoseMeasurementContext.parseSequenceNumber(data: data)
-        
         super.init()
+        print("GlucoseMeasurementContext#init - \(self.packetData)")
+        self.packetData = data
+        
+        parseFlags()
+        self.sequenceNumber = parseSequenceNumber()
 
-        self.indexCounter = 3; // parseFlags (1) + parseSequenceNumber (2)
-        
-        print("GlucoseMeasurementContext#init - \(self.data)")
-        
-        if(extendedFlagsPresent == true) {
+        if self.flagPresent(flagByte: FlagBytes.extendedFlagsPresent.rawValue).toBool()! {
             parseExtendedFlags()
         }
         
-        if(carbohydrateIDAndCarbohydratePresent == true) {
+        if self.flagPresent(flagByte: FlagBytes.carbohydrateIDAndCarbohydratePresent.rawValue).toBool()! {
             parseCarbohydrateID()
-            parseCarbohydrateUnits()
+            parseCarbohydrate()
         }
         
-        if(mealPresent == true) {
+        if self.flagPresent(flagByte: FlagBytes.mealPresent.rawValue).toBool()! {
             parseMeal()
         }
         
-        if(testerHealthPresent == true) {
+        if self.flagPresent(flagByte: FlagBytes.testerHealthPresent.rawValue).toBool()! {
             parseTesterAndHealth()
         }
         
-        if(exerciseDurationAndExerciseIntensityPresent == true) {
+        if self.flagPresent(flagByte: FlagBytes.exerciseDurationAndExerciseIntensityPresent.rawValue).toBool()! {
             parseExerciseDuration()
             parseExerciseIntensity()
         }
         
-        if(medicationIDAndMedicationPresent == true) {
+        if self.flagPresent(flagByte: FlagBytes.medicationIDAndMedicationPresent.rawValue).toBool()! {
             parseMedicationID()
             parseMedication()
         }
         
-        if(hbA1cPresent == true) {
+        if self.flagPresent(flagByte: FlagBytes.hbA1cPresent.rawValue).toBool()! {
             parseHbA1c()
         }
     }
     
 
     func parseExtendedFlags() {
-        //indexCounter += 1
+        //reserved for future use
     }
     
     func parseCarbohydrateID() {
-        print("parseCarbohydrateID")
-        let carbohydrateIDData = data.dataRange(indexCounter, Length: 1)
-        let carbohydrateIDByte = Int(strtoul(carbohydrateIDData.toHexString(), nil, 16))
+        let offset: Int = getOffset(max: indexOffsets.carbohydrateID.rawValue)
+        print("parseCarbohydrateID - offset: \(offset)")
+
+        let carbohydrateIDData = packetData.subdata(with: NSRange(location:offset, length: 1)) as NSData!
+        let carbohydrateIDByte = Int(strtoul(carbohydrateIDData?.toHexString(), nil, 16))
         print("carbohydrateIDByte: \(carbohydrateIDByte)")
         if let carbohydrateID = CarbohydrateID(rawValue:carbohydrateIDByte) {
             self.carbohydrateID = carbohydrateID
         }
         print("carbohydrateID: \(String(describing: carbohydrateID))")
-        
-        indexCounter += 1
     }
     
-    func parseCarbohydrateUnits() {
-        print("parseCarbohydrateUnits")
-        let carbohydrateUnitsData = data.dataRange(indexCounter, Length: 1)
-        carbohydrateWeight = carbohydrateUnitsData.shortFloatToFloat()
-        print("carbohydrateWeight: \(String(describing: carbohydrateWeight))")
-        
-        indexCounter += 1
+    func parseCarbohydrate() {
+        let offset: Int = getOffset(max: indexOffsets.carbohydrateWeight.rawValue)
+        print("parseCarbohydrate - offset: \(offset)")
+
+        let carbohydrateData = packetData.subdata(with: NSRange(location:offset, length: 2)) as NSData!
+        self.carbohydrateWeight = carbohydrateData?.shortFloatToFloat()
+        print("carbohydrate: \(String(describing: self.carbohydrateWeight))")
     }
     
     func parseMeal() {
-        print("parseMeal")
-        let mealData = data.dataRange(indexCounter, Length: 1)
-        let mealByte = Int(strtoul(mealData.toHexString(), nil, 16))
+        let offset: Int = getOffset(max: indexOffsets.meal.rawValue)
+        print("parseMeal - offset: \(offset)")
+        
+        let mealData = packetData.subdata(with: NSRange(location:offset, length: 1)) as NSData!
+        let mealByte = Int(strtoul(mealData?.toHexString(), nil, 16))
         print("mealByte: \(mealByte)")
         if let meal = Meal(rawValue: mealByte) {
             self.meal = meal
         }
         print("meal: \(String(describing: meal))")
-        
-        indexCounter += 1
     }
     
     func parseTesterAndHealth() {
-        let testerData = data.dataRange(indexCounter, Length: 1)
-        let tester = testerData.lowNibbleAtPosition()
-        let health = testerData.highNibbleAtPosition()
+        let offset: Int = getOffset(max: indexOffsets.testerHealth.rawValue)
+        print("parseMeal - offset: \(offset)")
+
+        let testerData = packetData.subdata(with: NSRange(location:offset, length: 1)) as NSData!
+        let tester = testerData?.lowNibbleAtPosition()
+        let health = testerData?.highNibbleAtPosition()
         
-        if(tester > 3) {
+        if(tester! > 3) {
             print("tester is reserved for future use")
             self.tester = "Reserved"
         } else {
-            print("tester: \(Tester.allValues[tester].rawValue)")
-            self.tester = Tester.allValues[tester].rawValue
+            print("tester: \(Tester.allValues[tester!].rawValue)")
+            self.tester = Tester.allValues[tester!].rawValue
         }
         
-        if(health > 5) {
+        if(health! > 5) {
             print("health is reserved for future use")
             self.health = "Reserved"
         } else {
-            print("health: \(Health.allValues[health].rawValue)")
-            self.health = Health.allValues[health].rawValue
+            print("health: \(Health.allValues[health!].rawValue)")
+            self.health = Health.allValues[health!].rawValue
         }
-        
-        indexCounter += 1
     }
     
     func parseExerciseDuration() {
-        let exerciseDurationBytes = data.dataRange(indexCounter, Length: 2)
-        let exerciseDurationInt : UInt16 = exerciseDurationBytes.readInteger(0);
+        let offset: Int = getOffset(max: indexOffsets.exerciseDuration.rawValue)
+        print("parseExerciseDuration - offset: \(offset)")
+
+        let exerciseDurationData = packetData.subdata(with: NSRange(location:offset, length: 2)) as NSData!
+        let exerciseDurationInt : UInt16 = exerciseDurationData!.readInteger(0);
         print("exerciseDurationInt: \(exerciseDurationInt)")
         self.exerciseDuration = exerciseDurationInt
-
-        indexCounter += 2
     }
     
     func parseExerciseIntensity() {
-        let exerciseIntensityData = data.dataRange(indexCounter, Length: 1)
-        self.exerciseIntensity = Int(strtoul(exerciseIntensityData.toHexString(), nil, 16))
+        let offset: Int = getOffset(max: indexOffsets.exerciseIntensity.rawValue)
+        print("parseExerciseIntensity - offset: \(offset)")
         
-        indexCounter += 1
+        let exerciseIntensityData = packetData.subdata(with: NSRange(location:offset, length: 1)) as NSData!
+        self.exerciseIntensity = Int(strtoul(exerciseIntensityData?.toHexString(), nil, 16))
+        print("exercise intensity \(String(describing: self.exerciseIntensity))")
     }
     
     func parseMedicationID() {
-        let medicationIDData = data.dataRange(indexCounter, Length: 1)
-        let medicationIDByte = Int(strtoul(medicationIDData.toHexString(), nil, 16))
+        let offset: Int = getOffset(max: indexOffsets.medicationID.rawValue)
+        print("parseMedicationID - offset: \(offset)")
+        
+        let medicationIDData = packetData.subdata(with: NSRange(location:offset, length: 1)) as NSData!
+        let medicationIDByte = Int(strtoul(medicationIDData?.toHexString(), nil, 16))
         
         if(medicationIDByte > 5) {
             self.medicationID = "Reserved"
@@ -326,26 +376,23 @@ public class GlucoseMeasurementContext : NSObject {
             print("medicationID: \(MedicationID.allValues[medicationIDByte].rawValue)")
             self.medicationID = MedicationID.allValues[medicationIDByte].rawValue
         }
-        
-        indexCounter += 1
     }
     
     func parseMedication() {
-        let medicationData = data.dataRange(indexCounter, Length: 1)
-        //TO-DO: is a conversion necessary here?
-        if(self.medicationID == "kilograms") {
-            //kilograms
-            self.medication = medicationData.shortFloatToFloat()
-        } else {
-            //litres
-            self.medication = medicationData.shortFloatToFloat()
-        }
+        let offset: Int = getOffset(max: indexOffsets.medication.rawValue)
+        print("parseMedication - offset: \(offset)")
         
-        indexCounter += 1
+        let medicationData = packetData.subdata(with: NSRange(location:offset, length: 2)) as NSData!
+        self.medication = medicationData?.shortFloatToFloat()
+        print("medication \(String(describing: self.medication))")
     }
     
     func parseHbA1c() {
-        let hbA1cData = data.dataRange(indexCounter, Length: 1)
-        self.hbA1c = hbA1cData.shortFloatToFloat()
+        let offset: Int = getOffset(max: indexOffsets.HbA1c.rawValue)
+        print("parseMedication - offset: \(offset)")
+        
+        let hbA1cData = packetData.subdata(with: NSRange(location:offset, length: 2)) as NSData!
+        self.hbA1c = hbA1cData?.shortFloatToFloat()
+        print("hbA1c \(String(describing: self.hbA1c))")
     }
 }

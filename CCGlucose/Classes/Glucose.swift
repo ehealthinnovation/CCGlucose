@@ -194,7 +194,6 @@ public class Glucose : NSObject {
                 let userInfo: [NSObject : AnyObject] =
                 [
                     NSLocalizedDescriptionKey as NSObject :  NSLocalizedString("Transfer Error", value: transferErrorString!, comment: "") as AnyObject,
-                    //NSLocalizedFailureReasonErrorKey as NSObject : NSLocalizedString("", value: "", comment: "") as AnyObject
                 ]
                 let err = NSError(domain: "CCGlucose", code: responseStatusInt!, userInfo: userInfo)
                 glucoseDelegate?.glucoseMeterDidTransferMeasurements(error: err)
@@ -214,8 +213,13 @@ public class Glucose : NSObject {
     }
     
     func parseGlucoseMeasurementContext(data:NSData) {
-        let glucoseMeasurementContext = GlucoseMeasurementContext(data: data)
-        glucoseDelegate?.glucoseMeasurementContext(measurementContext: glucoseMeasurementContext)
+        var values = [UInt8](repeating:0, count: 1)
+        data.getBytes(&values, length: 1)
+        
+        if (values[0] != 0) {
+            let glucoseMeasurementContext = GlucoseMeasurementContext(data: data)
+            glucoseDelegate?.glucoseMeasurementContext(measurementContext: glucoseMeasurementContext)
+        }
     }
     
     public func readNumberOfRecords() {

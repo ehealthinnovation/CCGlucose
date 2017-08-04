@@ -1,6 +1,5 @@
 platform :ios, '8.0'
 
-source 'https://github.ehealthinnovation.org/PHIT/CocoaPods.git'
 use_frameworks!
 
 target 'CCGlucose_Example' do

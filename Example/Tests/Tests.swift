@@ -112,7 +112,7 @@ class Tests: XCTestCase {
         XCTAssertEqual("Capillary Whole Blood", r.sampleType?.description)
         XCTAssertEqual("Finger", r.sampleLocation?.description)
         XCTAssertEqual(false, r.deviceBatteryLowAtTimeOfMeasurement)
-        XCTAssertEqual(false, r.sensorMalfunctionOrFaultingAtTimeOfMeasurement)
+        XCTAssertEqual(true, r.sensorMalfunctionOrFaultingAtTimeOfMeasurement)
         XCTAssertEqual(false, r.sampleSizeForBloodOrControlSolutionInsufficientAtTimeOfMeasurement)
         XCTAssertEqual(false, r.stripInsertionError)
         XCTAssertEqual(false, r.stripTypeIncorrectForDevice)
@@ -120,7 +120,7 @@ class Tests: XCTestCase {
         XCTAssertEqual(false, r.sensorResultLowerThanTheDeviceCanProcess)
         XCTAssertEqual(false, r.sensorTemperatureTooHighForValidTest)
         XCTAssertEqual(false, r.sensorTemperatureTooLowForValidTest)
-        XCTAssertEqual(true, r.sensorReadInterruptedBecauseStripWasPulledTooSoon)
+        XCTAssertEqual(false, r.sensorReadInterruptedBecauseStripWasPulledTooSoon)
         XCTAssertEqual(false, r.generalDeviceFault)
         XCTAssertEqual(false, r.timeFaultHasOccurred)
     }

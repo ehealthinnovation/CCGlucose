@@ -11,7 +11,7 @@ import Foundation
 
 // Based on Bluetooth spec:
 // https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.glucose_measurement_context.xml
-@objc public enum CarbohydrateID : Int {
+public enum CarbohydrateID : Int {
     case reserved = 0,
     breakfast,
     lunch,
@@ -48,7 +48,7 @@ import Foundation
 /// 'Meal' is too generic (app might have a Meal class), so an alias is required
 public typealias Meal = GlucoseMeasurementContextMeal
 
-@objc public enum GlucoseMeasurementContextMeal : Int {
+public enum GlucoseMeasurementContextMeal : Int {
     case reserved = 0,
     preprandialBeforeMeal,
     postprandialAfterMeal,
@@ -140,24 +140,6 @@ public class GlucoseMeasurementContext : NSObject {
     let flagsRange = NSRange(location:0, length: 1)
     let sequenceNumberRange = NSRange(location:1, length: 2)
     
-    // note: these methods are required to allow objc to access an optional enum
-
-    public var objc_hasMeal: Bool {
-        return self.meal == nil ? false : true;
-    }
-    
-    public var objc_meal: GlucoseMeasurementContextMeal {
-        return self.meal!
-    }
-
-    public var objc_hasCarbohydrateID: Bool {
-        return self.carbohydrateID == nil ? false : true;
-    }
-    
-    public var objc_carbohydrateID: CarbohydrateID {
-        return self.carbohydrateID!
-    }
-
     var medicationValueUnits: String!
     
     enum indexOffsets: Int {

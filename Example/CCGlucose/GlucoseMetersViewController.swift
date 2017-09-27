@@ -30,7 +30,7 @@ class GlucoseMetersViewController: UITableViewController, GlucoseMeterDiscoveryP
         Glucose.sharedInstance().glucoseMeterDiscoveryDelegate = self
     }
     
-    func onRefresh() {
+    @objc func onRefresh() {
         refreshControl?.endRefreshing()
         discoveredGlucoseMeters.removeAll()
 

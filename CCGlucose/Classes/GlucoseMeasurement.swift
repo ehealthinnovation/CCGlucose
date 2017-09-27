@@ -10,9 +10,7 @@ import Foundation
 import CCBluetooth
 import CCToolbox
 
-// note: enums that are exported to objc cannot be nicely printed, so we have to add a description
-
-@objc public enum SampleType : Int {
+public enum SampleType : Int {
     case reserved = 0,
     capillaryWholeBlood,
     capillaryPlasma,
@@ -42,7 +40,7 @@ import CCToolbox
     }
 }
 
-@objc public enum SampleLocation : Int {
+public enum SampleLocation : Int {
     case reserved = 0,
     finger,
     alternateSiteTest,
@@ -62,7 +60,7 @@ import CCToolbox
     }
 }
 
-@objc public enum GlucoseConcentrationUnits : Int, CustomStringConvertible {
+public enum GlucoseConcentrationUnits : Int, CustomStringConvertible {
     case kgL = 0,
     molL
     
@@ -93,36 +91,19 @@ public class GlucoseMeasurement : NSObject {
     //publicly accessible flag
     public var contextInformationFollows: Bool!
     
-    // the following methods have been added to allow access optional types (e.g. Int, Float, Bool)
-    // that have no equivalent in objective-c. They can be removed once we no longer require objective-c compatibility
-    
-    @objc public var objc_sampleType: SampleType {
-        if let sampleType = self.sampleType {
-            return sampleType
-        }
-        return .undeterminedWholeBlood
-    }
-    
-    @objc public var objc_sampleLocation: SampleLocation {
-        if let sampleLocation = self.sampleLocation {
-            return sampleLocation
-        }
-        return .notAvailable
-    }
-    
     //Sensor Status Annunciations
-    public var deviceBatteryLowAtTimeOfMeasurement: Bool!
-    public var sensorMalfunctionOrFaultingAtTimeOfMeasurement: Bool!
-    public var sampleSizeForBloodOrControlSolutionInsufficientAtTimeOfMeasurement: Bool!
-    public var stripInsertionError: Bool!
-    public var stripTypeIncorrectForDevice: Bool!
-    public var sensorResultHigherThanTheDeviceCanProcess: Bool!
-    public var sensorResultLowerThanTheDeviceCanProcess: Bool!
-    public var sensorTemperatureTooHighForValidTest: Bool!
-    public var sensorTemperatureTooLowForValidTest: Bool!
-    public var sensorReadInterruptedBecauseStripWasPulledTooSoon: Bool!
-    public var generalDeviceFault: Bool!
-    public var timeFaultHasOccurred: Bool!
+    public var deviceBatteryLowAtTimeOfMeasurement: Bool = false
+    public var sensorMalfunctionOrFaultingAtTimeOfMeasurement: Bool = false
+    public var sampleSizeForBloodOrControlSolutionInsufficientAtTimeOfMeasurement: Bool = false
+    public var stripInsertionError: Bool = false
+    public var stripTypeIncorrectForDevice: Bool = false
+    public var sensorResultHigherThanTheDeviceCanProcess: Bool = false
+    public var sensorResultLowerThanTheDeviceCanProcess: Bool = false
+    public var sensorTemperatureTooHighForValidTest: Bool = false
+    public var sensorTemperatureTooLowForValidTest: Bool = false
+    public var sensorReadInterruptedBecauseStripWasPulledTooSoon: Bool = false
+    public var generalDeviceFault: Bool = false
+    public var timeFaultHasOccurred: Bool = false
 
     enum indexOffsets: Int {
         case flags = 0,

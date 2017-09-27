@@ -13,7 +13,7 @@ import CCToolbox
 
 var thisGlucose : Glucose?
 
-@objc public enum transferError : Int {
+public enum transferError : Int {
     case reserved = 0,
     success,
     opCodeNotSupported,
@@ -52,7 +52,7 @@ var thisGlucose : Glucose?
     
 }
 
-@objc public protocol GlucoseProtocol {
+public protocol GlucoseProtocol {
     func numberOfStoredRecords(number: UInt16)
     func glucoseMeasurement(measurement:GlucoseMeasurement)
     func glucoseMeasurementContext(measurementContext:GlucoseMeasurementContext)
@@ -63,13 +63,13 @@ var thisGlucose : Glucose?
     func glucoseError(error: NSError)
 }
 
-@objc public protocol GlucoseMeterDiscoveryProtocol {
+public protocol GlucoseMeterDiscoveryProtocol {
     func glucoseMeterDiscovered(glucoseMeter:CBPeripheral)
 }
 
 public class Glucose : NSObject {
-    public weak var glucoseDelegate : GlucoseProtocol?
-    public weak var glucoseMeterDiscoveryDelegate: GlucoseMeterDiscoveryProtocol?
+    public var glucoseDelegate : GlucoseProtocol?
+    public var glucoseMeterDiscoveryDelegate: GlucoseMeterDiscoveryProtocol?
     var peripheral : CBPeripheral? {
         didSet {
             if (peripheral != nil) { // don't wipe the UUID when we disconnect and clear the peripheral
@@ -195,7 +195,7 @@ public class Glucose : NSObject {
                 [
                     NSLocalizedDescriptionKey as NSObject :  NSLocalizedString("Transfer Error", value: transferErrorString!, comment: "") as AnyObject,
                 ]
-                let err = NSError(domain: "CCGlucose", code: responseStatusInt!, userInfo: userInfo)
+                let err = NSError(domain: "CCGlucose", code: responseStatusInt!, userInfo: (userInfo as! [String : Any]))
                 glucoseDelegate?.glucoseMeterDidTransferMeasurements(error: err)
             }
         }
@@ -245,10 +245,10 @@ public class Glucose : NSObject {
         let recordNumberHex = String(recordNumberData.toHexString())
         
         let command = commandPrefix +
-            (recordNumberHex?.subStringWithRange(0, to: 2))! +
-            (recordNumberHex?.subStringWithRange(2, to: 4))! +
-            (recordNumberHex?.subStringWithRange(0, to: 2))! +
-            (recordNumberHex?.subStringWithRange(2, to: 4))!
+            (recordNumberHex.subStringWithRange(0, to: 2)) +
+            (recordNumberHex.subStringWithRange(2, to: 4)) +
+            (recordNumberHex.subStringWithRange(0, to: 2)) +
+            (recordNumberHex.subStringWithRange(2, to: 4))
         
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()
@@ -268,10 +268,10 @@ public class Glucose : NSObject {
         let recordNumberToHex = String(recordNumberToData.toHexString())
         
         let command = commandPrefix +
-            (recordNumberFromHex?.subStringWithRange(0, to: 2))! +
-            (recordNumberFromHex?.subStringWithRange(2, to: 4))! +
-            (recordNumberToHex?.subStringWithRange(0, to: 2))! +
-            (recordNumberToHex?.subStringWithRange(2, to: 4))!
+            (recordNumberFromHex.subStringWithRange(0, to: 2)) +
+            (recordNumberFromHex.subStringWithRange(2, to: 4)) +
+            (recordNumberToHex.subStringWithRange(0, to: 2)) +
+            (recordNumberToHex.subStringWithRange(2, to: 4))
         
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()
@@ -287,8 +287,8 @@ public class Glucose : NSObject {
         let recordNumberHex = String(recordNumberData.toHexString())
         
         let command = commandPrefix +
-            (recordNumberHex?.subStringWithRange(0, to: 2))! +
-            (recordNumberHex?.subStringWithRange(2, to: 4))!
+            (recordNumberHex.subStringWithRange(0, to: 2)) +
+            (recordNumberHex.subStringWithRange(2, to: 4))
 
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()
@@ -304,8 +304,8 @@ public class Glucose : NSObject {
         let recordNumberHex = String(recordNumberData.toHexString())
         
         let command = commandPrefix +
-            (recordNumberHex?.subStringWithRange(0, to: 2))! +
-            (recordNumberHex?.subStringWithRange(2, to: 4))!
+            (recordNumberHex.subStringWithRange(0, to: 2)) +
+            (recordNumberHex.subStringWithRange(2, to: 4))
         
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()

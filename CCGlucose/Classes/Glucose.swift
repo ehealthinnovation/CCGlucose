@@ -408,9 +408,11 @@ extension Glucose: BluetoothServiceProtocol {
         servicesAndCharacteristics[service.uuid.uuidString] = service.characteristics
         
         for characteristic in service.characteristics! {
-            print("reading \(characteristic.uuid.uuidString)")
-            DispatchQueue.global(qos: .background).async {
-                self.peripheral?.readValue(for: characteristic)
+            if characteristic.properties.contains(CBCharacteristicProperties.read) {
+                print("reading \(characteristic.uuid.uuidString)")
+                DispatchQueue.global(qos: .background).async {
+                    self.peripheral?.readValue(for: characteristic)
+                }
             }
         }
     }

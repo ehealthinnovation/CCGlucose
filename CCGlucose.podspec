@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'CCGlucose'
-  s.version          = '0.3.8'
+  s.version          = '0.3.9'
   s.summary          = 'Support for the Bluetooth Glucose Profile'
 
 # This description is used to generate tags and improve search results.
@@ -21,7 +21,9 @@ Pod::Spec.new do |s|
 
 Changelog
 
-0.3.8: swift4 compatibility"
+0.3.9: fixed bug that attempted to read all characteristics instead of just those that supported reading
+
+0.3.8: swift4 compatibility
 
 0.3.7: fixed measurement and context parsing issues
 

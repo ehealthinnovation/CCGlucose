@@ -19,8 +19,14 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
     var glucoseMeasurementsContexts: Array<GlucoseMeasurementContext> = Array<GlucoseMeasurementContext>()
     var selectedGlucoseMeasurement: GlucoseMeasurement!
     var selectedGlucoseMeasurementContext: GlucoseMeasurementContext!
-    var selectedMeter: CBPeripheral!
+    
     var meterConnected: Bool!
+    
+    var selectedMeter: CBPeripheral! {
+        didSet {
+            Glucose.sharedInstance().connectToGlucoseMeter(glucoseMeter: selectedMeter)
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -29,7 +35,7 @@ class GlucoseMeterViewController: UITableViewController, GlucoseProtocol {
         meterConnected = false
         Glucose.sharedInstance().glucoseDelegate = self
     }
-        
+    
     override func didMove(toParentViewController parent: UIViewController?) {
         super.didMove(toParentViewController: parent)
         

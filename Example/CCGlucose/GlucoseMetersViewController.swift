@@ -113,25 +113,13 @@ class GlucoseMetersViewController: UITableViewController, GlucoseMeterDiscoveryP
             let glucoseMeter = Array(discoveredGlucoseMeters)[indexPath.row]
             self.peripheral = glucoseMeter
             self.addPreviouslySelectedGlucoseMeter(self.peripheral)
-            self.didSelectDiscoveredGlucoseMeter(Array(self.discoveredGlucoseMeters)[indexPath.row])
         } else {
             let glucoseMeter = Array(previouslySelectedGlucoseMeters)[indexPath.row]
             self.peripheral = glucoseMeter
-            self.didSelectPreviouslySelectedGlucoseMeter(Array(self.previouslySelectedGlucoseMeters)[indexPath.row])
         }
         
         tableView.deselectRow(at: indexPath, animated: true)
         performSegue(withIdentifier: "segueToGlucoseMeter", sender: self)
-    }
-    
-    func didSelectDiscoveredGlucoseMeter(_ peripheral:CBPeripheral) {
-        print("ViewController#didSelectDiscoveredPeripheral \(String(describing: peripheral.name))")
-        Bluetooth.sharedInstance().connectPeripheral(peripheral)
-    }
-    
-    func didSelectPreviouslySelectedGlucoseMeter(_ peripheral:CBPeripheral) {
-        print("ViewController#didSelectPreviouslyConnectedPeripheral \(String(describing: peripheral.name))")
-        Bluetooth.sharedInstance().reconnectPeripheral(peripheral.identifier.uuidString)
     }
     
     func addPreviouslySelectedGlucoseMeter(_ cbPeripheral:CBPeripheral) {
